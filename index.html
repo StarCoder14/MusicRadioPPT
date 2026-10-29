@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>타임캡슐 라디오</title>
+  <!-- 인터넷이 안 되면 이 글꼴 대신 맑은 고딕으로 나옴 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Batang&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 같은 그림을 여러 번 쓰려고 한 곳에 모아 둠 -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <symbol id="capsule" viewBox="0 0 64 64">
+        <g transform="rotate(-35 32 32)">
+          <rect x="8" y="22" width="48" height="20" rx="10" fill="none" stroke="#eef2f7" stroke-width="3"/>
+          <path d="M32 23.5 h14 a8.5 8.5 0 0 1 0 17 h-14z" fill="#f4b942"/>
+        </g>
+        <path d="M46 8 a10 10 0 0 1 10 10" fill="none" stroke="#f4b942" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M46 2 a16 16 0 0 1 16 16" fill="none" stroke="#f4b942" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+      </symbol>
+      <symbol id="icon-diver" viewBox="0 0 100 100">
+        <path d="M5 70 q15 -10 30 0 t30 0 t30 0" fill="none" stroke="#5fb4cf" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="50" cy="52" r="16" fill="#f4b942"/>
+        <path d="M34 52 h32" stroke="#0a0f1d" stroke-width="3"/>
+        <path d="M50 36 v-14" stroke="#eef2f7" stroke-width="4" stroke-linecap="round"/>
+        <path d="M40 22 h20" stroke="#eef2f7" stroke-width="4" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="icon-boat" viewBox="0 0 100 100">
+        <path d="M5 80 q15 -10 30 0 t30 0 t30 0" fill="none" stroke="#5fb4cf" stroke-width="5" stroke-linecap="round"/>
+        <path d="M18 60 h64 l-10 14 h-44z" fill="#f4b942"/>
+        <path d="M50 60 v-44" stroke="#eef2f7" stroke-width="4" stroke-linecap="round"/>
+        <path d="M54 20 l22 32 h-22z" fill="#eef2f7"/>
+      </symbol>
+      <symbol id="icon-village" viewBox="0 0 100 100">
+        <path d="M14 78 v-26 l18 -14 l18 14 v26z" fill="none" stroke="#eef2f7" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M50 78 v-22 l18 -14 l18 14 v22z" fill="#f4b942"/>
+        <path d="M8 80 h84" stroke="#5fb4cf" stroke-width="5" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="icon-wind" viewBox="0 0 100 100">
+        <path d="M10 36 h52 a12 12 0 1 0 -12 -12" fill="none" stroke="#eef2f7" stroke-width="5" stroke-linecap="round"/>
+        <path d="M10 56 h70 a12 12 0 1 1 -12 12" fill="none" stroke="#f4b942" stroke-width="5" stroke-linecap="round"/>
+        <path d="M10 76 h34" fill="none" stroke="#5fb4cf" stroke-width="5" stroke-linecap="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div id="stage">
+
+    <!-- ===== 항상 떠 있는 방송 화면 틀 ===== -->
+    <header id="top-bar">
+      <div class="station-logo">
+        <svg class="capsule-icon"><use href="#capsule"/></svg>
+        <div>
+          <div class="program-name">타임캡슐 라디오</div>
+          <div class="station-name">2126 JEJU FM</div>
+        </div>
+      </div>
+      <div id="corner-label"></div>
+      <div class="top-right">
+        <div id="future-clock"></div>
+        <div id="on-air-lamp">ON AIR</div>
+      </div>
+    </header>
+
+    <svg id="sea-waves" viewBox="0 0 3840 120" preserveAspectRatio="none">
+      <path d="M0 70 Q120 40 240 70 T480 70 T720 70 T960 70 T1200 70 T1440 70 T1680 70 T1920 70 T2160 70 T2400 70 T2640 70 T2880 70 T3120 70 T3360 70 T3600 70 T3840 70" fill="none" stroke="#1d5c73" stroke-width="3"/>
+      <path d="M0 92 Q160 72 320 92 T640 92 T960 92 T1280 92 T1600 92 T1920 92 T2240 92 T2560 92 T2880 92 T3200 92 T3520 92 T3840 92" fill="none" stroke="#f4b942" stroke-width="2" opacity="0.4"/>
+    </svg>
+
+    <div id="practice-timer"></div>
+    <audio id="background-music" src="videos/bgm.mp3" loop preload="auto"></audio>
+
+    <!-- ===== 대기 화면 ===== -->
+    <section class="slide standby" data-on-air="off">
+      <svg class="capsule-big"><use href="#capsule"/></svg>
+      <div class="eyebrow">2126 JEJU FM</div>
+      <h1 class="big-title">타임캡슐 라디오</h1>
+      <p class="subtitle">우리가 기억해야 할 과거의 이야기</p>
+      <p class="waiting-text">곧 방송이 시작됩니다</p>
+    </section>
+
+    <!-- ===== 1. DJ 오프닝 ===== -->
+    <section class="slide" data-corner="OPENING">
+      <div class="eyebrow">2126년 제주 FM</div>
+      <h1 class="title">타임캡슐 라디오</h1>
+      <p class="subtitle" style="margin-top:0">기억하고 싶은, 잊고 있었던 물건을 찾아서</p>
+      <div class="people-row">
+        <div class="person-card step">
+          <div class="avatar media-frame">
+            <img src="images/dj.jpg" alt="DJ 박미소">
+            <div class="missing-note">DJ 사진<code>images/dj.jpg</code></div>
+          </div>
+          <div class="role">DJ</div>
+          <div class="name">박미소</div>
+          <div class="about">타임캡슐 라디오 진행</div>
+        </div>
+        <div class="person-card guest step">
+          <div class="avatar media-frame">
+            <img src="images/halmae.jpg" alt="영등할매">
+            <div class="missing-note">할매 사진<code>images/halmae.jpg</code></div>
+          </div>
+          <div class="role">오늘의 게스트</div>
+          <div class="name">영등할매</div>
+          <div class="about">제주에서 오신 특별한 손님</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 2. 사연 소개 ===== -->
+    <section class="slide" data-corner="사연 소개">
+      <div class="letter">
+        <div class="stamp">사연 도착</div>
+        <div class="from">제주에 사는 ○○○님의 사연</div>
+        <div class="body">
+          할머니 집 다락방에서<br>
+          오래된 상자 하나를 발견했어요.<br>
+          이게 무엇인지 알 수 있을까요?
+        </div>
+      </div>
+    </section>
+
+    <!-- 사연 속 물건. 한 번 더 누르면 "……어?" 하면서 정체가 공개됨 -->
+    <section class="slide" data-corner="사연 소개">
+      <div class="mystery-object">
+        <div class="polaroid">
+          <div class="media-frame">
+            <img src="images/gime.jpg" alt="사연 속 물건">
+            <div class="missing-note">사연 속 물건 사진 (기메)<code>images/gime.jpg</code></div>
+          </div>
+          <div class="caption">할머니의 상자 속 물건</div>
+        </div>
+        <div class="mystery-answer">
+          <div class="question-mark">?</div>
+          <div class="answer step" data-reveals=".mystery-object">
+            <div class="reveal-name">기메</div>
+            <div class="reveal-meaning">제주 굿에서<br>쓰던 물건</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. 패널토크: 제주칠머리당영등굿 ===== -->
+    <section class="slide" data-corner="패널토크 · 영등할매와 함께">
+      <div class="eyebrow">오늘의 타임캡슐</div>
+      <h1 class="heritage-name">제주칠머리당<br>영등굿</h1>
+      <div class="badge-row step">
+        <div class="badge unesco">유네스코 인류무형문화유산 · 2009</div>
+        <div class="badge">대한민국 국가무형유산</div>
+      </div>
+      <p class="subtitle step">영등할매에게 이야기를 들어 봅니다</p>
+    </section>
+
+    <!-- ① 제주칠머리당영등굿이란? -->
+    <section class="slide" data-corner="패널토크 · ① 영등굿이란?">
+      <h2 class="title">바다와 함께 사는 사람들의 <span class="highlight">소원</span></h2>
+      <div class="picture-row">
+        <div class="picture-card step">
+          <svg><use href="#icon-diver"/></svg>
+          <div class="word">해녀</div>
+          <div class="easy">바다에 들어가<br>해산물을 따는 사람</div>
+        </div>
+        <div class="picture-card step">
+          <svg><use href="#icon-boat"/></svg>
+          <div class="word">어부</div>
+          <div class="easy">배를 타고<br>고기를 잡는 사람</div>
+        </div>
+        <div class="picture-card step">
+          <svg><use href="#icon-village"/></svg>
+          <div class="word">마을</div>
+          <div class="easy">바닷가에서<br>함께 사는 이웃</div>
+        </div>
+      </div>
+      <div class="easy-meaning step">
+        <b>굿</b> = 신을 모시고, 노래와 춤으로 소원을 비는 큰 잔치<br>
+        <b>소원</b> = 바다에서 무사히 돌아오기, 바다가 넉넉하기
+      </div>
+    </section>
+
+    <!-- ② 영등할매는 누구? -->
+    <section class="slide" data-corner="패널토크 · ② 영등할매는 누구?">
+      <svg style="width:130px;height:130px;margin-bottom:10px"><use href="#icon-wind"/></svg>
+      <h2 class="title" style="margin-bottom:0">영등할매 = <span class="highlight">바람의 신</span></h2>
+      <p class="subtitle" style="margin-top:16px">음력 2월, 바다 건너 제주에 찾아오는 손님</p>
+      <div class="wind-calendar">
+        <div class="calendar-day step">
+          <div class="date">음력 2월 1일</div>
+          <div class="what">맞이하기</div>
+          <div class="ritual">영등환영제</div>
+        </div>
+        <div class="calendar-arrow step"></div>
+        <div class="calendar-day step">
+          <div class="date">보름 동안</div>
+          <div class="what">머무르기</div>
+          <div class="ritual">바다에 해산물 씨를 뿌려 줌</div>
+        </div>
+        <div class="calendar-arrow step"></div>
+        <div class="calendar-day step">
+          <div class="date">음력 2월 14일</div>
+          <div class="what">보내기</div>
+          <div class="ritual">영등송별제</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 사연 속 물건: 기메 -->
+    <section class="slide" data-corner="패널토크 · ③ 사연 속 물건">
+      <div class="split">
+        <div class="media-frame">
+          <img src="images/gime2.jpg" alt="굿에 쓰인 기메">
+          <div class="missing-note">굿판에 걸린 기메 사진<code>images/gime2.jpg</code></div>
+        </div>
+        <div class="explain">
+          <h2 class="title">기메</h2>
+          <p class="line">종이로 만든 굿 장식</p>
+          <p class="line muted step">굿하는 곳을 꾸미는 물건.<br>그냥 오래된 종이 같지만<br>옛 제주 사람들에겐 아주 소중했어요.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 사연 속 물건: 배방선 (대본 메모: 영상에 배 넣기). 말하는 동안 틀어 두는 거라 소리 없이 반복함 -->
+    <section class="slide" data-corner="패널토크 · ③ 사연 속 물건">
+      <div class="split">
+        <div class="media-frame">
+          <video src="videos/baebangseon.mp4" muted loop playsinline preload="auto"></video>
+          <div class="missing-note">짚배를 바다로 보내는 영상<code>videos/baebangseon.mp4</code></div>
+        </div>
+        <div class="explain">
+          <h2 class="title">배방선</h2>
+          <p class="line">짚으로 만든 배를<br>바다로 띄워 보내기</p>
+          <p class="line muted step">나쁜 일은 배에 실어 떠나보내고,<br>바다의 평안과 넉넉함을 빌어요.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④ 왜 기억해야 할까? (필수 주제 1: 보존하고 계승해야 하는 이유) -->
+    <section class="slide" data-corner="패널토크 · ④ 왜 기억해야 할까?">
+      <div class="quote-mark">“</div>
+      <p class="big-quote">
+        사는 모습은 변해도,<br>
+        무엇을 <span class="highlight">소중하게</span> 생각했는지는<br>
+        기억할 가치가 있지 않겠수꽈.
+      </p>
+      <p class="quote-by">영등할매</p>
+      <p class="subtitle step">바다를 두려워하면서도 의지했던 마음이 굿 속에 남아 있어요</p>
+    </section>
+
+    <!-- ⑤ 어떻게 이어갈까? (필수 주제 2: 보존하고 계승하기 위한 방법) -->
+    <section class="slide" data-corner="패널토크 · ⑤ 어떻게 이어갈까?">
+      <h2 class="title">기억을 이어 가는 방법</h2>
+      <div class="method-row">
+        <div class="method-card step">
+          <div class="verb">알기</div>
+          <div class="how">학교에서 배우고<br>직접 찾아보기</div>
+        </div>
+        <div class="method-card step">
+          <div class="verb">기록하기</div>
+          <div class="how">전해 주는 분들의 이야기,<br>음악, 물건을 남기기</div>
+        </div>
+        <div class="method-card step">
+          <div class="verb">알리기</div>
+          <div class="how">라디오와 영상으로<br>더 많은 사람에게 나누기</div>
+        </div>
+      </div>
+      <p class="bottom-line step">“박물관에만 넣어두는 게 보존의 전부는 아니우다.”</p>
+    </section>
+
+    <!-- ===== 4. 음악 소개 ===== -->
+    <!-- 곡이 정해지면 [곡 제목], [소개] 부분만 바꾸면 됨 -->
+    <section class="slide" data-corner="음악 소개">
+      <div class="equalizer">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <div class="eyebrow">오늘의 음악</div>
+      <h2 class="song-title">[곡 제목]</h2>
+      <p class="song-info">[누가 부른 곡인지, 사연과 어떻게 어울리는지 한 줄]</p>
+    </section>
+
+    <!-- ===== 5. 공익광고 ===== -->
+    <section class="slide" data-corner="공익광고">
+      <div class="media-frame full-video">
+        <video src="videos/gongik.mp4" playsinline preload="auto"></video>
+        <div class="missing-note">공익광고 영상<code>videos/gongik.mp4</code></div>
+      </div>
+    </section>
+
+    <!-- ===== 6. 협찬 ===== -->
+    <!-- 음료 이름과 광고 문구가 정해지면 [ ] 부분만 바꾸면 됨 -->
+    <section class="slide" data-corner="협찬">
+      <div class="sponsor-box">
+        <div class="media-frame">
+          <img src="images/sponsor.jpg" alt="협찬 음료">
+          <div class="missing-note">협찬 음료 사진<code>images/sponsor.jpg</code></div>
+        </div>
+        <div class="sponsor-text">
+          <div class="eyebrow" style="margin-bottom:12px">SPONSOR</div>
+          <div class="sponsor-name">[음료 이름]</div>
+          <p class="slogan">[한 줄 광고 문구]</p>
+          <p class="thanks">이 방송은 [음료 이름]의 협찬으로 함께합니다</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 7. DJ 클로징 ===== -->
+    <section class="slide" data-corner="CLOSING">
+      <div class="eyebrow">오늘의 타임캡슐</div>
+      <h1 class="big-title">잘 기억해 줍서</h1>
+      <p class="capsule-label">오늘 꺼낸 물건: <b>기메</b> · 오늘의 이야기: <b>제주칠머리당영등굿</b></p>
+      <p class="subtitle">다음 시간에도 우리가 기억해야 할 과거의 이야기를 찾아오겠습니다</p>
+      <p class="sign-off step" data-on-air="off">타임캡슐 라디오 · 방송 종료 · 감사합니다</p>
+    </section>
+
+    <!-- ===== 보너스: NG 장면 (안 쓰면 이 section을 통째로 지우면 됨) ===== -->
+    <section class="slide" data-corner="보너스 · NG 장면" data-on-air="off">
+      <div class="media-frame full-video">
+        <video src="videos/ng.mp4" playsinline preload="auto"></video>
+        <div class="missing-note">NG 장면 영상<code>videos/ng.mp4</code></div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

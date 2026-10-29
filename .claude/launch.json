@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "timecapsule-radio",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8123", "--directory", "C:\\Users\\rlxo0\\OneDrive\\바탕 화면\\타임캡슐라디오_PPT"],
+      "port": 8123
+    }
+  ]
+}

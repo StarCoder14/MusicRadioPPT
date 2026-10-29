@@ -1,0 +1,844 @@
+:root {
+  --night: #0a0f1d;
+  --deep-sea: #0e2433;
+  --sea: #1d5c73;
+  --amber: #f4b942;
+  --amber-soft: rgba(244, 185, 66, 0.16);
+  --paper: #f3e9d2;
+  --paper-ink: #3b2f22;
+  --text: #eef2f7;
+  --muted: #92a2b7;
+  --on-air: #ff3b30;
+  --line: rgba(238, 242, 247, 0.12);
+
+  --font-title: "Black Han Sans", "Malgun Gothic", sans-serif;
+  --font-body: "Gowun Dodum", "Malgun Gothic", sans-serif;
+  --font-quote: "Gowun Batang", "Batang", serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+/* 화면은 항상 1920x1080으로 그리고, 창 크기에 맞춰 통째로 줄이거나 늘림. 그래야 어떤 컴퓨터에서 틀어도 배치가 안 깨짐 */
+#stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1920px;
+  height: 1080px;
+  transform-origin: center center;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(29, 92, 115, 0.45), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(244, 185, 66, 0.10), transparent 50%),
+    linear-gradient(180deg, var(--night) 0%, var(--deep-sea) 100%);
+}
+
+/* 미래 느낌을 내는 옅은 격자 */
+#stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.35;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+  pointer-events: none;
+}
+
+/* ---------- 항상 떠 있는 방송 화면 틀 ---------- */
+
+#top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  padding: 0 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+}
+
+.station-logo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.station-logo .capsule-icon {
+  width: 46px;
+  height: 46px;
+}
+
+.station-logo .program-name {
+  font-family: var(--font-title);
+  font-size: 34px;
+  letter-spacing: 1px;
+}
+
+.station-logo .station-name {
+  font-size: 20px;
+  color: var(--muted);
+  letter-spacing: 3px;
+}
+
+#corner-label {
+  font-size: 26px;
+  padding: 10px 28px;
+  border: 1px solid rgba(244, 185, 66, 0.5);
+  border-radius: 999px;
+  color: var(--amber);
+  background: var(--amber-soft);
+  transition: opacity 0.4s;
+}
+
+#corner-label:empty {
+  opacity: 0;
+}
+
+.top-right {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+#future-clock {
+  font-size: 24px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+#on-air-lamp {
+  font-family: var(--font-title);
+  font-size: 26px;
+  letter-spacing: 3px;
+  padding: 8px 22px;
+  border-radius: 8px;
+  border: 2px solid #4a4f5a;
+  color: #4a4f5a;
+  transition: all 0.5s;
+}
+
+/* 방송 중일 때만 빨간 불이 들어옴 */
+#stage.is-on-air #on-air-lamp {
+  border-color: var(--on-air);
+  color: #fff;
+  background: var(--on-air);
+  box-shadow: 0 0 28px rgba(255, 59, 48, 0.7);
+  animation: on-air-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes on-air-glow {
+  50% {
+    box-shadow: 0 0 10px rgba(255, 59, 48, 0.35);
+  }
+}
+
+/* 바닥에 깔리는 제주 바다 겸 라디오 전파 */
+#sea-waves {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 200%;
+  height: 120px;
+  z-index: 1;
+  opacity: 0.55;
+  animation: waves-flow 18s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes waves-flow {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+#practice-timer {
+  position: absolute;
+  right: 64px;
+  bottom: 36px;
+  z-index: 20;
+  font-size: 26px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  font-variant-numeric: tabular-nums;
+  display: none;
+}
+
+#practice-timer.is-visible {
+  display: block;
+}
+
+#practice-timer.is-over-time {
+  color: var(--on-air);
+}
+
+#practice-timer.is-in-range {
+  color: #6ee7a8;
+}
+
+/* ---------- 슬라이드 ---------- */
+
+.slide {
+  position: absolute;
+  inset: 110px 0 0 0;
+  padding: 40px 140px 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.6s ease, visibility 0.6s;
+  z-index: 5;
+}
+
+.slide.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 키를 누를 때마다 하나씩 나타나는 요소 */
+.step {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.step.is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+.eyebrow {
+  font-size: 30px;
+  color: var(--amber);
+  letter-spacing: 6px;
+  margin-bottom: 24px;
+}
+
+.big-title {
+  font-family: var(--font-title);
+  font-size: 120px;
+  line-height: 1.15;
+  font-weight: normal;
+}
+
+.title {
+  font-family: var(--font-title);
+  font-size: 84px;
+  line-height: 1.2;
+  font-weight: normal;
+  margin-bottom: 28px;
+}
+
+.subtitle {
+  font-size: 40px;
+  color: var(--muted);
+  margin-top: 28px;
+}
+
+.highlight {
+  color: var(--amber);
+}
+
+/* ---------- 대기 화면 ---------- */
+
+.standby .capsule-big {
+  width: 220px;
+  height: 220px;
+  margin-bottom: 36px;
+  animation: capsule-float 4s ease-in-out infinite;
+}
+
+@keyframes capsule-float {
+  50% {
+    transform: translateY(-14px) rotate(-4deg);
+  }
+}
+
+.standby .waiting-text {
+  margin-top: 56px;
+  font-size: 30px;
+  color: var(--muted);
+  letter-spacing: 4px;
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* ---------- 인물 카드 ---------- */
+
+.people-row {
+  display: flex;
+  gap: 72px;
+  margin-top: 56px;
+}
+
+.person-card {
+  width: 460px;
+  padding: 44px 36px;
+  border-radius: 28px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.person-card .role {
+  font-size: 28px;
+  color: var(--amber);
+  letter-spacing: 4px;
+}
+
+.person-card .name {
+  font-family: var(--font-title);
+  font-size: 72px;
+  margin: 12px 0 8px;
+}
+
+.person-card .about {
+  font-size: 28px;
+  color: var(--muted);
+}
+
+.person-card .avatar {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.person-card .avatar .missing-note {
+  font-size: 22px;
+  border-radius: 50%;
+}
+
+.person-card .avatar .missing-note code {
+  font-size: 18px;
+}
+
+.person-card.guest {
+  border-color: rgba(244, 185, 66, 0.5);
+  background: var(--amber-soft);
+}
+
+/* ---------- 사연 편지 ---------- */
+
+.letter {
+  width: 1160px;
+  padding: 64px 80px;
+  border-radius: 16px;
+  background: var(--paper);
+  color: var(--paper-ink);
+  text-align: left;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  transform: rotate(-1.2deg);
+  position: relative;
+}
+
+.letter .from {
+  font-size: 30px;
+  opacity: 0.7;
+  margin-bottom: 24px;
+}
+
+.letter .body {
+  font-family: var(--font-quote);
+  font-size: 44px;
+  line-height: 1.6;
+}
+
+.letter .stamp {
+  position: absolute;
+  top: 40px;
+  right: 56px;
+  padding: 10px 22px;
+  border: 3px solid #b5432f;
+  border-radius: 8px;
+  color: #b5432f;
+  font-family: var(--font-title);
+  font-size: 28px;
+  transform: rotate(8deg);
+}
+
+/* ---------- 사진, 영상 칸 ---------- */
+
+.media-frame {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+}
+
+.media-frame img,
+.media-frame video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 파일이 아직 없을 때 보이는 빈칸. 어떤 파일을 넣으면 되는지 바로 알려 줌 */
+.media-frame.is-missing img,
+.media-frame.is-missing video {
+  display: none;
+}
+
+.media-frame .missing-note {
+  display: none;
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 3px dashed rgba(244, 185, 66, 0.45);
+  border-radius: 20px;
+  color: var(--muted);
+  font-size: 30px;
+}
+
+.media-frame .missing-note code {
+  font-family: Consolas, monospace;
+  font-size: 26px;
+  color: var(--amber);
+}
+
+.media-frame.is-missing .missing-note {
+  display: flex;
+}
+
+.polaroid {
+  padding: 22px 22px 80px;
+  background: #fbf7ee;
+  border-radius: 6px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  transform: rotate(2deg);
+  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+}
+
+.polaroid .media-frame {
+  width: 760px;
+  height: 520px;
+  border-radius: 2px;
+  background: #ddd5c4;
+}
+
+.polaroid .media-frame .missing-note {
+  color: #6b5d48;
+  border-color: rgba(107, 93, 72, 0.4);
+}
+
+.polaroid .caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  font-family: var(--font-quote);
+  font-size: 36px;
+  color: var(--paper-ink);
+}
+
+/* "……어?" 하는 순간 사진이 확 다가옴 */
+.mystery-object.is-revealed .polaroid {
+  transform: rotate(0deg) scale(1.08);
+}
+
+.mystery-object {
+  display: flex;
+  align-items: center;
+  gap: 90px;
+}
+
+/* 물음표와 정답을 같은 칸에 겹쳐 둠. 정답이 나올 때 자리가 안 흔들림 */
+.mystery-answer {
+  display: grid;
+  align-items: center;
+  text-align: left;
+  width: 560px;
+}
+
+.mystery-answer > * {
+  grid-area: 1 / 1;
+}
+
+.mystery-answer .question-mark {
+  font-family: var(--font-title);
+  font-size: 260px;
+  color: var(--amber);
+  line-height: 1;
+  transition: opacity 0.4s;
+}
+
+.mystery-object.is-revealed .question-mark {
+  opacity: 0;
+}
+
+.mystery-answer .reveal-name {
+  font-family: var(--font-title);
+  font-size: 150px;
+  color: var(--amber);
+  line-height: 1;
+}
+
+.mystery-answer .reveal-meaning {
+  font-size: 44px;
+  margin-top: 24px;
+  line-height: 1.4;
+}
+
+/* ---------- 코너 타이틀 ---------- */
+
+.heritage-name {
+  font-family: var(--font-title);
+  font-size: 140px;
+  line-height: 1.1;
+  background: linear-gradient(180deg, #fff 30%, var(--amber));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.badge-row {
+  display: flex;
+  gap: 24px;
+  margin-top: 44px;
+}
+
+.badge {
+  font-size: 32px;
+  padding: 14px 30px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.badge.unesco {
+  border-color: rgba(244, 185, 66, 0.6);
+  color: var(--amber);
+}
+
+/* ---------- 그림 카드 (쉬운 설명용) ---------- */
+
+.picture-row {
+  display: flex;
+  gap: 48px;
+  margin-top: 20px;
+}
+
+.picture-card {
+  width: 420px;
+  padding: 40px 28px 44px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+}
+
+.picture-card svg {
+  width: 150px;
+  height: 150px;
+  margin-bottom: 20px;
+}
+
+.picture-card .word {
+  font-family: var(--font-title);
+  font-size: 56px;
+}
+
+.picture-card .easy {
+  font-size: 30px;
+  color: var(--muted);
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+.easy-meaning {
+  margin-top: 52px;
+  font-size: 40px;
+  padding: 22px 44px;
+  border-radius: 18px;
+  background: var(--amber-soft);
+  border: 1px solid rgba(244, 185, 66, 0.4);
+}
+
+.easy-meaning b {
+  color: var(--amber);
+  font-weight: normal;
+  font-family: var(--font-title);
+}
+
+/* ---------- 영등할매 달력 ---------- */
+
+.wind-calendar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 56px;
+}
+
+.calendar-day {
+  width: 380px;
+  padding: 36px 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+}
+
+.calendar-day .date {
+  font-size: 30px;
+  color: var(--muted);
+}
+
+.calendar-day .what {
+  font-family: var(--font-title);
+  font-size: 54px;
+  margin-top: 10px;
+}
+
+.calendar-day .ritual {
+  font-size: 28px;
+  color: var(--amber);
+  margin-top: 8px;
+}
+
+.calendar-arrow {
+  width: 160px;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+}
+
+/* ---------- 기메, 배방선 ---------- */
+
+.split {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+  text-align: left;
+}
+
+.split .media-frame {
+  width: 900px;
+  height: 600px;
+  flex-shrink: 0;
+}
+
+.split .explain {
+  width: 640px;
+}
+
+.split .explain .title {
+  font-size: 96px;
+}
+
+.split .explain .line {
+  font-size: 40px;
+  line-height: 1.5;
+  margin-top: 18px;
+}
+
+.split .explain .line.muted {
+  color: var(--muted);
+  font-size: 34px;
+}
+
+/* ---------- 할매 한마디 ---------- */
+
+.quote-mark {
+  font-family: var(--font-quote);
+  font-size: 200px;
+  line-height: 0.6;
+  color: var(--amber);
+  opacity: 0.6;
+}
+
+.big-quote {
+  font-family: var(--font-quote);
+  font-size: 64px;
+  line-height: 1.5;
+  max-width: 1500px;
+  margin-top: 30px;
+}
+
+.quote-by {
+  font-size: 34px;
+  color: var(--amber);
+  margin-top: 40px;
+}
+
+/* ---------- 보존 방법 ---------- */
+
+.method-row {
+  display: flex;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.method-card {
+  width: 480px;
+  padding: 44px 36px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.method-card .verb {
+  font-family: var(--font-title);
+  font-size: 72px;
+  color: var(--amber);
+}
+
+.method-card .how {
+  font-size: 32px;
+  line-height: 1.5;
+  margin-top: 14px;
+}
+
+.bottom-line {
+  margin-top: 56px;
+  font-family: var(--font-quote);
+  font-size: 38px;
+  color: var(--muted);
+}
+
+/* ---------- 음악 소개 ---------- */
+
+.equalizer {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 180px;
+  margin-bottom: 48px;
+}
+
+.equalizer span {
+  width: 26px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, var(--amber), var(--sea));
+  animation: bounce 1.1s ease-in-out infinite;
+}
+
+.equalizer span:nth-child(odd) {
+  animation-duration: 0.8s;
+}
+
+.equalizer span:nth-child(3n) {
+  animation-duration: 1.4s;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    height: 20%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+
+.song-title {
+  font-family: var(--font-title);
+  font-size: 110px;
+}
+
+.song-info {
+  font-size: 40px;
+  color: var(--muted);
+  margin-top: 20px;
+}
+
+/* ---------- 공익광고, NG 영상 ---------- */
+
+.full-video {
+  width: 1500px;
+  height: 760px;
+}
+
+/* ---------- 협찬 ---------- */
+
+.sponsor-box {
+  display: flex;
+  align-items: center;
+  gap: 80px;
+}
+
+.sponsor-box .media-frame {
+  width: 620px;
+  height: 620px;
+  border-radius: 50%;
+}
+
+.sponsor-box .media-frame .missing-note {
+  border-radius: 50%;
+}
+
+.sponsor-text {
+  text-align: left;
+}
+
+.sponsor-text .sponsor-name {
+  font-family: var(--font-title);
+  font-size: 104px;
+  color: var(--amber);
+  line-height: 1.15;
+}
+
+.sponsor-text .slogan {
+  font-size: 44px;
+  margin-top: 24px;
+}
+
+.sponsor-text .thanks {
+  font-size: 32px;
+  color: var(--muted);
+  margin-top: 40px;
+}
+
+/* ---------- 클로징 ---------- */
+
+.capsule-label {
+  margin-top: 40px;
+  font-size: 36px;
+  padding: 20px 40px;
+  border-radius: 999px;
+  border: 1px dashed rgba(244, 185, 66, 0.6);
+}
+
+.capsule-label b {
+  color: var(--amber);
+  font-weight: normal;
+}
+
+.sign-off {
+  margin-top: 60px;
+  font-size: 34px;
+  color: var(--muted);
+  letter-spacing: 4px;
+}
