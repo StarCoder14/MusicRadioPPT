@@ -28,13 +28,8 @@ function shownStepsOf(slide) {
   return stepsOf(slide).filter((step) => step.classList.contains("is-shown"));
 }
 
-// data-reveals가 붙은 단계는 보일 때 다른 요소까지 같이 바꿈. "……어?" 장면에서 사진이 확대되는 게 이걸로 됨
-function setStepVisible(slide, step, isVisible) {
+function setStepVisible(step, isVisible) {
   step.classList.toggle("is-shown", isVisible);
-  const revealTargetSelector = step.dataset.reveals;
-  if (revealTargetSelector) {
-    slide.querySelector(revealTargetSelector).classList.toggle("is-revealed", isVisible);
-  }
 }
 
 function updateOnAirLamp() {
@@ -64,6 +59,18 @@ function pauseVideosIn(slide) {
   slide.querySelectorAll("video").forEach((video) => video.pause());
 }
 
+// 영상이 길어서 중간에 멈출 일이 생길 수 있음. 처음부터 다시 틀지 않고 멈춘 곳에서 이어서 재생함
+function togglePauseVideosInCurrentSlide() {
+  slides[currentSlideNumber].querySelectorAll("video").forEach((video) => {
+    if (video.closest(".media-frame").classList.contains("is-missing")) return;
+    if (video.paused) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  });
+}
+
 function goToSlide(nextSlideNumber, showAllSteps = false) {
   if (nextSlideNumber < 0 || nextSlideNumber >= slides.length) return;
 
@@ -75,7 +82,7 @@ function goToSlide(nextSlideNumber, showAllSteps = false) {
   const arrivingSlide = slides[currentSlideNumber];
 
   // 뒤로 돌아갈 때는 그 화면을 다 펼친 상태로 보여 줌. 앞으로 갈 때는 처음부터 하나씩
-  stepsOf(arrivingSlide).forEach((step) => setStepVisible(arrivingSlide, step, showAllSteps));
+  stepsOf(arrivingSlide).forEach((step) => setStepVisible(step, showAllSteps));
 
   arrivingSlide.classList.add("is-active");
   cornerLabel.textContent = arrivingSlide.dataset.corner || "";
@@ -88,7 +95,7 @@ function goForward() {
   const slide = slides[currentSlideNumber];
   const hiddenStep = stepsOf(slide).find((step) => !step.classList.contains("is-shown"));
   if (hiddenStep) {
-    setStepVisible(slide, hiddenStep, true);
+    setStepVisible(hiddenStep, true);
     updateOnAirLamp();
   } else {
     goToSlide(currentSlideNumber + 1);
@@ -99,7 +106,7 @@ function goBackward() {
   const slide = slides[currentSlideNumber];
   const shownSteps = shownStepsOf(slide);
   if (shownSteps.length > 0) {
-    setStepVisible(slide, shownSteps[shownSteps.length - 1], false);
+    setStepVisible(shownSteps[shownSteps.length - 1], false);
     updateOnAirLamp();
   } else {
     goToSlide(currentSlideNumber - 1, true);
@@ -209,6 +216,8 @@ document.addEventListener("keydown", (event) => {
     toggleFullscreen();
   } else if (key === "b" || key === "B" || key === "ㅠ") {
     toggleBackgroundMusic();
+  } else if (key === "p" || key === "P" || key === "ㅔ") {
+    togglePauseVideosInCurrentSlide();
   } else if (key === "t" || key === "T" || key === "ㅅ") {
     practiceTimer.classList.toggle("is-visible");
   }

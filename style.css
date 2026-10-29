@@ -347,45 +347,6 @@ body {
   background: var(--amber-soft);
 }
 
-/* ---------- 사연 편지 ---------- */
-
-.letter {
-  width: 1160px;
-  padding: 64px 80px;
-  border-radius: 16px;
-  background: var(--paper);
-  color: var(--paper-ink);
-  text-align: left;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
-  transform: rotate(-1.2deg);
-  position: relative;
-}
-
-.letter .from {
-  font-size: 30px;
-  opacity: 0.7;
-  margin-bottom: 24px;
-}
-
-.letter .body {
-  font-family: var(--font-quote);
-  font-size: 44px;
-  line-height: 1.6;
-}
-
-.letter .stamp {
-  position: absolute;
-  top: 40px;
-  right: 56px;
-  padding: 10px 22px;
-  border: 3px solid #b5432f;
-  border-radius: 8px;
-  color: #b5432f;
-  font-family: var(--font-title);
-  font-size: 28px;
-  transform: rotate(8deg);
-}
-
 /* ---------- 사진, 영상 칸 ---------- */
 
 .media-frame {
@@ -432,240 +393,6 @@ body {
 
 .media-frame.is-missing .missing-note {
   display: flex;
-}
-
-.polaroid {
-  padding: 22px 22px 80px;
-  background: #fbf7ee;
-  border-radius: 6px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
-  transform: rotate(2deg);
-  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
-  position: relative;
-}
-
-.polaroid .media-frame {
-  width: 760px;
-  height: 520px;
-  border-radius: 2px;
-  background: #ddd5c4;
-}
-
-.polaroid .media-frame .missing-note {
-  color: #6b5d48;
-  border-color: rgba(107, 93, 72, 0.4);
-}
-
-.polaroid .caption {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 18px;
-  font-family: var(--font-quote);
-  font-size: 36px;
-  color: var(--paper-ink);
-}
-
-/* "……어?" 하는 순간 사진이 확 다가옴 */
-.mystery-object.is-revealed .polaroid {
-  transform: rotate(0deg) scale(1.08);
-}
-
-.mystery-object {
-  display: flex;
-  align-items: center;
-  gap: 90px;
-}
-
-/* 물음표와 정답을 같은 칸에 겹쳐 둠. 정답이 나올 때 자리가 안 흔들림 */
-.mystery-answer {
-  display: grid;
-  align-items: center;
-  text-align: left;
-  width: 560px;
-}
-
-.mystery-answer > * {
-  grid-area: 1 / 1;
-}
-
-.mystery-answer .question-mark {
-  font-family: var(--font-title);
-  font-size: 260px;
-  color: var(--amber);
-  line-height: 1;
-  transition: opacity 0.4s;
-}
-
-.mystery-object.is-revealed .question-mark {
-  opacity: 0;
-}
-
-.mystery-answer .reveal-name {
-  font-family: var(--font-title);
-  font-size: 150px;
-  color: var(--amber);
-  line-height: 1;
-}
-
-.mystery-answer .reveal-meaning {
-  font-size: 44px;
-  margin-top: 24px;
-  line-height: 1.4;
-}
-
-/* ---------- 코너 타이틀 ---------- */
-
-.heritage-name {
-  font-family: var(--font-title);
-  font-size: 140px;
-  line-height: 1.1;
-  background: linear-gradient(180deg, #fff 30%, var(--amber));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.badge-row {
-  display: flex;
-  gap: 24px;
-  margin-top: 44px;
-}
-
-.badge {
-  font-size: 32px;
-  padding: 14px 30px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.badge.unesco {
-  border-color: rgba(244, 185, 66, 0.6);
-  color: var(--amber);
-}
-
-/* ---------- 그림 카드 (쉬운 설명용) ---------- */
-
-.picture-row {
-  display: flex;
-  gap: 48px;
-  margin-top: 20px;
-}
-
-.picture-card {
-  width: 420px;
-  padding: 40px 28px 44px;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--line);
-}
-
-.picture-card svg {
-  width: 150px;
-  height: 150px;
-  margin-bottom: 20px;
-}
-
-.picture-card .word {
-  font-family: var(--font-title);
-  font-size: 56px;
-}
-
-.picture-card .easy {
-  font-size: 30px;
-  color: var(--muted);
-  margin-top: 10px;
-  line-height: 1.4;
-}
-
-.easy-meaning {
-  margin-top: 52px;
-  font-size: 40px;
-  padding: 22px 44px;
-  border-radius: 18px;
-  background: var(--amber-soft);
-  border: 1px solid rgba(244, 185, 66, 0.4);
-}
-
-.easy-meaning b {
-  color: var(--amber);
-  font-weight: normal;
-  font-family: var(--font-title);
-}
-
-/* ---------- 영등할매 달력 ---------- */
-
-.wind-calendar {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  margin-top: 56px;
-}
-
-.calendar-day {
-  width: 380px;
-  padding: 36px 24px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--line);
-}
-
-.calendar-day .date {
-  font-size: 30px;
-  color: var(--muted);
-}
-
-.calendar-day .what {
-  font-family: var(--font-title);
-  font-size: 54px;
-  margin-top: 10px;
-}
-
-.calendar-day .ritual {
-  font-size: 28px;
-  color: var(--amber);
-  margin-top: 8px;
-}
-
-.calendar-arrow {
-  width: 160px;
-  height: 4px;
-  background: linear-gradient(90deg, transparent, var(--amber), transparent);
-}
-
-/* ---------- 기메, 배방선 ---------- */
-
-.split {
-  display: flex;
-  align-items: center;
-  gap: 80px;
-  text-align: left;
-}
-
-.split .media-frame {
-  width: 900px;
-  height: 600px;
-  flex-shrink: 0;
-}
-
-.split .explain {
-  width: 640px;
-}
-
-.split .explain .title {
-  font-size: 96px;
-}
-
-.split .explain .line {
-  font-size: 40px;
-  line-height: 1.5;
-  margin-top: 18px;
-}
-
-.split .explain .line.muted {
-  color: var(--muted);
-  font-size: 34px;
 }
 
 /* ---------- 할매 한마디 ---------- */
@@ -774,11 +501,17 @@ body {
   margin-top: 20px;
 }
 
-/* ---------- 공익광고, NG 영상 ---------- */
+/* ---------- 사연, 영등굿, 공익광고, NG 영상 ---------- */
 
 .full-video {
-  width: 1500px;
-  height: 760px;
+  width: 1540px;
+  height: 790px;
+  background: #000;
+}
+
+/* 영상 가장자리가 잘리면 자막이나 얼굴이 날아가서, 화면을 꽉 채우는 대신 영상 전체가 다 보이게 함 */
+.full-video video {
+  object-fit: contain;
 }
 
 /* ---------- 협찬 ---------- */

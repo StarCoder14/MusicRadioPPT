@@ -23,29 +23,6 @@
         <path d="M46 8 a10 10 0 0 1 10 10" fill="none" stroke="#f4b942" stroke-width="2.5" stroke-linecap="round"/>
         <path d="M46 2 a16 16 0 0 1 16 16" fill="none" stroke="#f4b942" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
       </symbol>
-      <symbol id="icon-diver" viewBox="0 0 100 100">
-        <path d="M5 70 q15 -10 30 0 t30 0 t30 0" fill="none" stroke="#5fb4cf" stroke-width="5" stroke-linecap="round"/>
-        <circle cx="50" cy="52" r="16" fill="#f4b942"/>
-        <path d="M34 52 h32" stroke="#0a0f1d" stroke-width="3"/>
-        <path d="M50 36 v-14" stroke="#eef2f7" stroke-width="4" stroke-linecap="round"/>
-        <path d="M40 22 h20" stroke="#eef2f7" stroke-width="4" stroke-linecap="round"/>
-      </symbol>
-      <symbol id="icon-boat" viewBox="0 0 100 100">
-        <path d="M5 80 q15 -10 30 0 t30 0 t30 0" fill="none" stroke="#5fb4cf" stroke-width="5" stroke-linecap="round"/>
-        <path d="M18 60 h64 l-10 14 h-44z" fill="#f4b942"/>
-        <path d="M50 60 v-44" stroke="#eef2f7" stroke-width="4" stroke-linecap="round"/>
-        <path d="M54 20 l22 32 h-22z" fill="#eef2f7"/>
-      </symbol>
-      <symbol id="icon-village" viewBox="0 0 100 100">
-        <path d="M14 78 v-26 l18 -14 l18 14 v26z" fill="none" stroke="#eef2f7" stroke-width="4" stroke-linejoin="round"/>
-        <path d="M50 78 v-22 l18 -14 l18 14 v22z" fill="#f4b942"/>
-        <path d="M8 80 h84" stroke="#5fb4cf" stroke-width="5" stroke-linecap="round"/>
-      </symbol>
-      <symbol id="icon-wind" viewBox="0 0 100 100">
-        <path d="M10 36 h52 a12 12 0 1 0 -12 -12" fill="none" stroke="#eef2f7" stroke-width="5" stroke-linecap="round"/>
-        <path d="M10 56 h70 a12 12 0 1 1 -12 12" fill="none" stroke="#f4b942" stroke-width="5" stroke-linecap="round"/>
-        <path d="M10 76 h34" fill="none" stroke="#5fb4cf" stroke-width="5" stroke-linecap="round"/>
-      </symbol>
     </defs>
   </svg>
 
@@ -111,129 +88,20 @@
       </div>
     </section>
 
-    <!-- ===== 2. 사연 소개 ===== -->
+    <!-- ===== 2. 사연 소개 (영상) ===== -->
     <section class="slide" data-corner="사연 소개">
-      <div class="letter">
-        <div class="stamp">사연 도착</div>
-        <div class="from">제주에 사는 ○○○님의 사연</div>
-        <div class="body">
-          할머니 집 다락방에서<br>
-          오래된 상자 하나를 발견했어요.<br>
-          이게 무엇인지 알 수 있을까요?
-        </div>
+      <div class="media-frame full-video">
+        <video src="videos/sayeon.mp4" playsinline preload="auto"></video>
+        <div class="missing-note">사연 영상<code>videos/sayeon.mp4</code></div>
       </div>
     </section>
 
-    <!-- 사연 속 물건. 한 번 더 누르면 "……어?" 하면서 정체가 공개됨 -->
-    <section class="slide" data-corner="사연 소개">
-      <div class="mystery-object">
-        <div class="polaroid">
-          <div class="media-frame">
-            <img src="images/gime.jpg" alt="사연 속 물건">
-            <div class="missing-note">사연 속 물건 사진 (기메)<code>images/gime.jpg</code></div>
-          </div>
-          <div class="caption">할머니의 상자 속 물건</div>
-        </div>
-        <div class="mystery-answer">
-          <div class="question-mark">?</div>
-          <div class="answer step" data-reveals=".mystery-object">
-            <div class="reveal-name">기메</div>
-            <div class="reveal-meaning">제주 굿에서<br>쓰던 물건</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 3. 패널토크: 제주칠머리당영등굿 ===== -->
+    <!-- ===== 3. 패널토크: 제주칠머리당영등굿 (영상) ===== -->
+    <!-- 상단 라벨에 패널토크가 계속 떠 있어서 영상이 나오는 동안에도 택1이 뭔지 보임 -->
     <section class="slide" data-corner="패널토크 · 영등할매와 함께">
-      <div class="eyebrow">오늘의 타임캡슐</div>
-      <h1 class="heritage-name">제주칠머리당<br>영등굿</h1>
-      <div class="badge-row step">
-        <div class="badge unesco">유네스코 인류무형문화유산 · 2009</div>
-        <div class="badge">대한민국 국가무형유산</div>
-      </div>
-      <p class="subtitle step">영등할매에게 이야기를 들어 봅니다</p>
-    </section>
-
-    <!-- ① 제주칠머리당영등굿이란? -->
-    <section class="slide" data-corner="패널토크 · ① 영등굿이란?">
-      <h2 class="title">바다와 함께 사는 사람들의 <span class="highlight">소원</span></h2>
-      <div class="picture-row">
-        <div class="picture-card step">
-          <svg><use href="#icon-diver"/></svg>
-          <div class="word">해녀</div>
-          <div class="easy">바다에 들어가<br>해산물을 따는 사람</div>
-        </div>
-        <div class="picture-card step">
-          <svg><use href="#icon-boat"/></svg>
-          <div class="word">어부</div>
-          <div class="easy">배를 타고<br>고기를 잡는 사람</div>
-        </div>
-        <div class="picture-card step">
-          <svg><use href="#icon-village"/></svg>
-          <div class="word">마을</div>
-          <div class="easy">바닷가에서<br>함께 사는 이웃</div>
-        </div>
-      </div>
-      <div class="easy-meaning step">
-        <b>굿</b> = 신을 모시고, 노래와 춤으로 소원을 비는 큰 잔치<br>
-        <b>소원</b> = 바다에서 무사히 돌아오기, 바다가 넉넉하기
-      </div>
-    </section>
-
-    <!-- ② 영등할매는 누구? -->
-    <section class="slide" data-corner="패널토크 · ② 영등할매는 누구?">
-      <svg style="width:130px;height:130px;margin-bottom:10px"><use href="#icon-wind"/></svg>
-      <h2 class="title" style="margin-bottom:0">영등할매 = <span class="highlight">바람의 신</span></h2>
-      <p class="subtitle" style="margin-top:16px">음력 2월, 바다 건너 제주에 찾아오는 손님</p>
-      <div class="wind-calendar">
-        <div class="calendar-day step">
-          <div class="date">음력 2월 1일</div>
-          <div class="what">맞이하기</div>
-          <div class="ritual">영등환영제</div>
-        </div>
-        <div class="calendar-arrow step"></div>
-        <div class="calendar-day step">
-          <div class="date">보름 동안</div>
-          <div class="what">머무르기</div>
-          <div class="ritual">바다에 해산물 씨를 뿌려 줌</div>
-        </div>
-        <div class="calendar-arrow step"></div>
-        <div class="calendar-day step">
-          <div class="date">음력 2월 14일</div>
-          <div class="what">보내기</div>
-          <div class="ritual">영등송별제</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ③ 사연 속 물건: 기메 -->
-    <section class="slide" data-corner="패널토크 · ③ 사연 속 물건">
-      <div class="split">
-        <div class="media-frame">
-          <img src="images/gime2.jpg" alt="굿에 쓰인 기메">
-          <div class="missing-note">굿판에 걸린 기메 사진<code>images/gime2.jpg</code></div>
-        </div>
-        <div class="explain">
-          <h2 class="title">기메</h2>
-          <p class="line">종이로 만든 굿 장식</p>
-          <p class="line muted step">굿하는 곳을 꾸미는 물건.<br>그냥 오래된 종이 같지만<br>옛 제주 사람들에겐 아주 소중했어요.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ③ 사연 속 물건: 배방선 (대본 메모: 영상에 배 넣기). 말하는 동안 틀어 두는 거라 소리 없이 반복함 -->
-    <section class="slide" data-corner="패널토크 · ③ 사연 속 물건">
-      <div class="split">
-        <div class="media-frame">
-          <video src="videos/baebangseon.mp4" muted loop playsinline preload="auto"></video>
-          <div class="missing-note">짚배를 바다로 보내는 영상<code>videos/baebangseon.mp4</code></div>
-        </div>
-        <div class="explain">
-          <h2 class="title">배방선</h2>
-          <p class="line">짚으로 만든 배를<br>바다로 띄워 보내기</p>
-          <p class="line muted step">나쁜 일은 배에 실어 떠나보내고,<br>바다의 평안과 넉넉함을 빌어요.</p>
-        </div>
+      <div class="media-frame full-video">
+        <video src="videos/yeongdeunggut.mp4" playsinline preload="auto"></video>
+        <div class="missing-note">제주칠머리당영등굿 영상<code>videos/yeongdeunggut.mp4</code></div>
       </div>
     </section>
 
