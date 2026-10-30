@@ -1,6 +1,9 @@
 const stage = document.getElementById("stage");
+const camera = document.getElementById("camera");
+const onAirLamp = document.getElementById("on-air-lamp");
+const onAirFlash = document.getElementById("on-air-flash");
+const onAirSound = document.getElementById("on-air-sound");
 const slides = Array.from(document.querySelectorAll(".slide"));
-const cornerLabel = document.getElementById("corner-label");
 const futureClock = document.getElementById("future-clock");
 const practiceTimer = document.getElementById("practice-timer");
 const backgroundMusic = document.getElementById("background-music");
@@ -10,9 +13,13 @@ const STAGE_HEIGHT = 1080;
 const FUTURE_YEAR = 2126;
 const SHORTEST_SHOW_SECONDS = 10 * 60;
 const LONGEST_SHOW_SECONDS = 12 * 60;
+const OFF_AIR_STEP = '.step[data-on-air="off"]';
+const LAMP_ZOOM_SCALE = 5;
+const GLITCH_MILLISECONDS = 350;
 
 let currentSlideNumber = 0;
 let showStartTime = null;
+let isTransitioning = false;
 
 // 창 크기가 바뀔 때마다 1920x1080 무대를 화면에 꽉 맞게 늘이고 줄임
 function fitStageToWindow() {
@@ -20,31 +27,38 @@ function fitStageToWindow() {
   stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
 function stepsOf(slide) {
   return Array.from(slide.querySelectorAll(".step"));
 }
 
-function shownStepsOf(slide) {
-  return stepsOf(slide).filter((step) => step.classList.contains("is-shown"));
+function isStepShown(step) {
+  return step !== null && step.classList.contains("is-shown");
 }
 
 function setStepVisible(step, isVisible) {
   step.classList.toggle("is-shown", isVisible);
 }
 
-function updateOnAirLamp() {
-  const slide = slides[currentSlideNumber];
-  let isOnAir = slide.dataset.onAir !== "off";
-  const turnsOffAirStep = slide.querySelector('.step[data-on-air="off"]');
-  if (turnsOffAirStep && turnsOffAirStep.classList.contains("is-shown")) {
-    isOnAir = false;
-  }
-  stage.classList.toggle("is-on-air", isOnAir);
+function isOnAirNow() {
+  return stage.classList.contains("is-on-air");
+}
 
-  // 대기 화면에서 처음 넘어가는 순간부터 방송 시간을 잼
-  if (isOnAir && showStartTime === null) {
+function setOnAir(isOn) {
+  stage.classList.toggle("is-on-air", isOn);
+
+  // 대기 화면에서 처음 불이 들어오는 순간부터 방송 시간을 잼
+  if (isOn && showStartTime === null) {
     showStartTime = Date.now();
   }
+}
+
+// 화면을 바꾸기 전에, 바꾸고 나면 불이 켜져 있어야 하는지 미리 계산함. 불 상태가 바뀔 때만 줌 연출을 하려고
+function shouldBeOnAir(slide, isOffAirStepShown) {
+  return slide.dataset.onAir !== "off" && !isOffAirStepShown;
 }
 
 function playVideosIn(slide) {
@@ -71,9 +85,7 @@ function togglePauseVideosInCurrentSlide() {
   });
 }
 
-function goToSlide(nextSlideNumber, showAllSteps = false) {
-  if (nextSlideNumber < 0 || nextSlideNumber >= slides.length) return;
-
+function goToSlide(nextSlideNumber, showAllSteps) {
   const leavingSlide = slides[currentSlideNumber];
   leavingSlide.classList.remove("is-active");
   pauseVideosIn(leavingSlide);
@@ -85,32 +97,166 @@ function goToSlide(nextSlideNumber, showAllSteps = false) {
   stepsOf(arrivingSlide).forEach((step) => setStepVisible(step, showAllSteps));
 
   arrivingSlide.classList.add("is-active");
-  cornerLabel.textContent = arrivingSlide.dataset.corner || "";
   playVideosIn(arrivingSlide);
-  updateOnAirLamp();
+}
+
+// 클래스를 뗐다가 다시 붙여야 애니메이션이 처음부터 다시 돎
+function restartAnimation(element, className) {
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
+}
+
+function glitchScreen() {
+  restartAnimation(camera, "is-glitching");
+  setTimeout(() => camera.classList.remove("is-glitching"), GLITCH_MILLISECONDS);
+}
+
+function keepBetween(value, smallest, largest) {
+  return Math.min(Math.max(value, smallest), largest);
+}
+
+// ON AIR 불이 화면 가운데 쪽으로 오도록 카메라를 얼마나 옮기고 키울지 계산함
+function zoomedOnLampTransform() {
+  const stageBox = stage.getBoundingClientRect();
+  const lampBox = onAirLamp.getBoundingClientRect();
+  const fitScale = stageBox.width / STAGE_WIDTH;
+  const lampCenterX = (lampBox.left + lampBox.width / 2 - stageBox.left) / fitScale;
+  const lampCenterY = (lampBox.top + lampBox.height / 2 - stageBox.top) / fitScale;
+
+  // 불이 오른쪽 위 구석에 붙어 있어서 정가운데로 끌어오면 화면 바깥 검은 부분이 보임. 그래서 화면 끝을 넘지 않게 막음
+  const moveX = keepBetween(
+    STAGE_WIDTH / 2 - lampCenterX * LAMP_ZOOM_SCALE,
+    STAGE_WIDTH - STAGE_WIDTH * LAMP_ZOOM_SCALE,
+    0
+  );
+  const moveY = keepBetween(
+    STAGE_HEIGHT / 2 - lampCenterY * LAMP_ZOOM_SCALE,
+    STAGE_HEIGHT - STAGE_HEIGHT * LAMP_ZOOM_SCALE,
+    0
+  );
+  return {
+    transform: `translate(${moveX}px, ${moveY}px) scale(${LAMP_ZOOM_SCALE})`,
+    lampScreenX: lampCenterX * LAMP_ZOOM_SCALE + moveX,
+    lampScreenY: lampCenterY * LAMP_ZOOM_SCALE + moveY,
+  };
+}
+
+function playOnAirSound() {
+  onAirSound.currentTime = 0;
+  onAirSound.play().catch(() => {});
+}
+
+// 불을 켤 때는 형광등처럼 지지직 두어 번 깜빡이다 켜지고, 끌 때는 한 번 버티다 툭 꺼짐
+async function flickerLamp(turnOn) {
+  playOnAirSound();
+  if (turnOn) {
+    setOnAir(true);
+    await wait(70);
+    setOnAir(false);
+    await wait(110);
+    setOnAir(true);
+    await wait(50);
+    setOnAir(false);
+    await wait(200);
+    setOnAir(true);
+    restartAnimation(onAirFlash, "is-flashing");
+  } else {
+    setOnAir(false);
+    await wait(90);
+    setOnAir(true);
+    await wait(70);
+    setOnAir(false);
+    restartAnimation(onAirFlash, "is-powering-down");
+  }
+}
+
+// 이전엔 불만 바로 바꿨는데, 방송 시작과 끝은 제일 중요한 순간이라 카메라가 불빛까지 다가갔다가 빠지게 바꿈
+async function playOnAirTransition(turnOn, applyChange) {
+  isTransitioning = true;
+  const zoom = zoomedOnLampTransform();
+  const zoomedTransform = zoom.transform;
+  const smoothMove = "cubic-bezier(0.65, 0, 0.35, 1)";
+
+  // 번쩍하는 빛이 확대된 불빛 자리에서 터지게 위치를 맞춤
+  onAirFlash.style.setProperty("--flash-x", `${zoom.lampScreenX}px`);
+  onAirFlash.style.setProperty("--flash-y", `${zoom.lampScreenY}px`);
+
+  await camera.animate(
+    [{ transform: "none" }, { transform: zoomedTransform }],
+    { duration: 800, easing: smoothMove, fill: "forwards" }
+  ).finished;
+
+  await flickerLamp(turnOn);
+  await wait(450);
+
+  // 화면이 불빛으로 꽉 차 있는 동안 뒤에서 몰래 다음 화면으로 바꿔 둠
+  applyChange();
+
+  await camera.animate(
+    [{ transform: zoomedTransform }, { transform: "none" }],
+    { duration: 1000, easing: smoothMove, fill: "forwards" }
+  ).finished;
+
+  camera.getAnimations().forEach((animation) => animation.cancel());
+  onAirFlash.classList.remove("is-flashing", "is-powering-down");
+  isTransitioning = false;
+}
+
+// 불 상태가 바뀌면 줌 연출, 그대로면 평소처럼 바로 바꿈
+function runChange(nextIsOnAir, applyChange, isNewSlide) {
+  if (nextIsOnAir !== isOnAirNow()) {
+    playOnAirTransition(nextIsOnAir, applyChange);
+    return;
+  }
+  if (isNewSlide) glitchScreen();
+  applyChange();
+}
+
+function changeStep(slide, step, isVisible) {
+  const offAirStep = slide.querySelector(OFF_AIR_STEP);
+  const isOffAirStepShown = step === offAirStep ? isVisible : isStepShown(offAirStep);
+  runChange(shouldBeOnAir(slide, isOffAirStepShown), () => setStepVisible(step, isVisible), false);
+}
+
+function changeSlide(nextSlideNumber, showAllSteps) {
+  if (nextSlideNumber < 0 || nextSlideNumber >= slides.length) return;
+  if (nextSlideNumber === currentSlideNumber) return;
+  const nextSlide = slides[nextSlideNumber];
+  const hasOffAirStep = nextSlide.querySelector(OFF_AIR_STEP) !== null;
+  runChange(
+    shouldBeOnAir(nextSlide, showAllSteps && hasOffAirStep),
+    () => goToSlide(nextSlideNumber, showAllSteps),
+    true
+  );
 }
 
 // 아직 안 보인 단계가 있으면 그것부터 하나 보여 주고, 다 보였으면 다음 화면으로 감
 function goForward() {
+  if (isTransitioning) return;
   const slide = slides[currentSlideNumber];
-  const hiddenStep = stepsOf(slide).find((step) => !step.classList.contains("is-shown"));
+  const hiddenStep = stepsOf(slide).find((step) => !isStepShown(step));
   if (hiddenStep) {
-    setStepVisible(hiddenStep, true);
-    updateOnAirLamp();
+    changeStep(slide, hiddenStep, true);
   } else {
-    goToSlide(currentSlideNumber + 1);
+    changeSlide(currentSlideNumber + 1, false);
   }
 }
 
 function goBackward() {
+  if (isTransitioning) return;
   const slide = slides[currentSlideNumber];
-  const shownSteps = shownStepsOf(slide);
+  const shownSteps = stepsOf(slide).filter(isStepShown);
   if (shownSteps.length > 0) {
-    setStepVisible(shownSteps[shownSteps.length - 1], false);
-    updateOnAirLamp();
+    changeStep(slide, shownSteps[shownSteps.length - 1], false);
   } else {
-    goToSlide(currentSlideNumber - 1, true);
+    changeSlide(currentSlideNumber - 1, true);
   }
+}
+
+function jumpToSlide(slideNumber, showAllSteps) {
+  if (isTransitioning) return;
+  changeSlide(slideNumber, showAllSteps);
 }
 
 function toggleFullscreen() {
@@ -155,8 +301,8 @@ function twoDigits(number) {
 function updateFutureClock() {
   const now = new Date();
   futureClock.textContent =
-    `${FUTURE_YEAR}. ${twoDigits(now.getMonth() + 1)}. ${twoDigits(now.getDate())}  ` +
-    `${twoDigits(now.getHours())}:${twoDigits(now.getMinutes())}`;
+    `${FUTURE_YEAR}.${twoDigits(now.getMonth() + 1)}.${twoDigits(now.getDate())} ` +
+    `${twoDigits(now.getHours())}:${twoDigits(now.getMinutes())}:${twoDigits(now.getSeconds())}`;
 }
 
 function updatePracticeTimer() {
@@ -174,7 +320,7 @@ function updatePracticeTimer() {
   practiceTimer.classList.toggle("is-over-time", passedSeconds > LONGEST_SHOW_SECONDS);
 }
 
-// 사진이나 영상 파일이 아직 없으면 빈칸에 "이 이름으로 넣으세요"를 띄움
+// 영상 파일이 아직 없으면 빈칸에 "이 이름으로 넣으세요"를 띄움
 function markMissingMedia() {
   document.querySelectorAll(".media-frame").forEach((frame) => {
     const media = frame.querySelector("img, video");
@@ -209,9 +355,9 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     goBackward();
   } else if (key === "Home") {
-    goToSlide(0);
+    jumpToSlide(0, false);
   } else if (key === "End") {
-    goToSlide(slides.length - 1, true);
+    jumpToSlide(slides.length - 1, true);
   } else if (key === "f" || key === "F" || key === "ㄹ") {
     toggleFullscreen();
   } else if (key === "b" || key === "B" || key === "ㅠ") {
@@ -228,7 +374,8 @@ window.addEventListener("resize", fitStageToWindow);
 
 fitStageToWindow();
 markMissingMedia();
-goToSlide(0);
+slides[0].classList.add("is-active");
+setOnAir(shouldBeOnAir(slides[0], false));
 updateFutureClock();
 setInterval(updateFutureClock, 1000);
 setInterval(updatePracticeTimer, 500);

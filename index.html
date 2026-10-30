@@ -7,7 +7,7 @@
   <!-- 인터넷이 안 되면 이 글꼴 대신 맑은 고딕으로 나옴 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Batang&family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,171 +27,131 @@
   </svg>
 
   <div id="stage">
+    <div id="camera">
+      <div id="screen">
 
-    <!-- ===== 항상 떠 있는 방송 화면 틀 ===== -->
-    <header id="top-bar">
-      <div class="station-logo">
-        <svg class="capsule-icon"><use href="#capsule"/></svg>
-        <div>
-          <div class="program-name">타임캡슐 라디오</div>
-          <div class="station-name">2126 JEJU FM</div>
+        <!-- ===== 배경 애니메이션 ===== -->
+        <div id="floor-space"><div id="floor-grid"></div></div>
+        <div id="horizon-glow"></div>
+        <div id="scan-line"></div>
+
+        <svg id="sea-waves" viewBox="0 0 3840 120" preserveAspectRatio="none">
+          <path d="M0 70 Q120 40 240 70 T480 70 T720 70 T960 70 T1200 70 T1440 70 T1680 70 T1920 70 T2160 70 T2400 70 T2640 70 T2880 70 T3120 70 T3360 70 T3600 70 T3840 70" fill="none" stroke="#1d5c73" stroke-width="3"/>
+          <path d="M0 92 Q160 72 320 92 T640 92 T960 92 T1280 92 T1600 92 T1920 92 T2240 92 T2560 92 T2880 92 T3200 92 T3520 92 T3840 92" fill="none" stroke="#f4b942" stroke-width="2" opacity="0.4"/>
+        </svg>
+
+        <!-- ===== HUD 테두리 ===== -->
+        <div class="hud-corner top-left"></div>
+        <div class="hud-corner top-right"></div>
+        <div class="hud-corner bottom-left"></div>
+        <div class="hud-corner bottom-right"></div>
+        <div class="hud-ruler left"></div>
+        <div class="hud-ruler right"></div>
+        <div class="hud-readout left">
+          <div class="signal-bars"><span></span><span></span><span></span><span></span><span></span></div>
+          <span>FM 21.26 MHz</span>
         </div>
-      </div>
-      <div id="corner-label"></div>
-      <div class="top-right">
-        <div id="future-clock"></div>
-        <div id="on-air-lamp">ON AIR</div>
-      </div>
-    </header>
+        <div class="hud-readout right">
+          <span>33.51°N 126.54°E · JEJU</span>
+          <div class="rec-dot"></div>
+        </div>
 
-    <svg id="sea-waves" viewBox="0 0 3840 120" preserveAspectRatio="none">
-      <path d="M0 70 Q120 40 240 70 T480 70 T720 70 T960 70 T1200 70 T1440 70 T1680 70 T1920 70 T2160 70 T2400 70 T2640 70 T2880 70 T3120 70 T3360 70 T3600 70 T3840 70" fill="none" stroke="#1d5c73" stroke-width="3"/>
-      <path d="M0 92 Q160 72 320 92 T640 92 T960 92 T1280 92 T1600 92 T1920 92 T2240 92 T2560 92 T2880 92 T3200 92 T3520 92 T3840 92" fill="none" stroke="#f4b942" stroke-width="2" opacity="0.4"/>
-    </svg>
+        <!-- ===== 항상 떠 있는 방송 화면 틀 ===== -->
+        <header id="top-bar">
+          <div class="station-logo">
+            <svg class="capsule-icon"><use href="#capsule"/></svg>
+            <div>
+              <div class="program-name">타임캡슐 라디오</div>
+              <div class="station-name">2126 JEJU FM</div>
+            </div>
+          </div>
+          <div class="top-right">
+            <div id="future-clock"></div>
+            <div id="on-air-lamp">ON AIR</div>
+          </div>
+        </header>
 
+        <!-- ===== 대기 화면 ===== -->
+        <section class="slide standby" data-on-air="off">
+          <svg class="capsule-big"><use href="#capsule"/></svg>
+          <div class="eyebrow">2126 JEJU FM</div>
+          <h1 class="big-title">타임캡슐 라디오</h1>
+          <p class="subtitle">우리가 기억해야 할 과거의 이야기</p>
+          <p class="waiting-text">곧 방송이 시작됩니다</p>
+        </section>
+
+        <!-- ===== 1. DJ 오프닝 ===== -->
+        <!-- 사람이 직접 앞에서 말하는 화면은 일부러 비워 둠. 그래야 라디오처럼 사람한테 눈이 감 -->
+        <section class="slide"></section>
+
+        <!-- ===== 2. 사연 소개 (영상) ===== -->
+        <section class="slide">
+          <div class="media-frame full-video">
+            <video src="videos/sayeon.mp4" playsinline preload="auto"></video>
+            <div class="missing-note">사연 영상<code>videos/sayeon.mp4</code></div>
+          </div>
+        </section>
+
+        <!-- ===== 3. 패널토크: 제주칠머리당영등굿 (영상) ===== -->
+        <section class="slide">
+          <div class="media-frame full-video">
+            <video src="videos/yeongdeunggut.mp4" playsinline preload="auto"></video>
+            <div class="missing-note">제주칠머리당영등굿 영상<code>videos/yeongdeunggut.mp4</code></div>
+          </div>
+        </section>
+
+        <!-- ④ 왜 기억해야 할까 (패널토크, 직접 말함) -->
+        <section class="slide"></section>
+
+        <!-- ⑤ 어떻게 이어갈까 (패널토크, 직접 말함) -->
+        <section class="slide"></section>
+
+        <!-- ===== 4. 음악 소개 ===== -->
+        <!-- 곡이 정해지면 [곡 제목], [소개] 부분만 바꾸면 됨 -->
+        <section class="slide">
+          <div class="equalizer">
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="eyebrow">오늘의 음악</div>
+          <h2 class="song-title">[곡 제목]</h2>
+          <p class="song-info">[누가 부른 곡인지, 사연과 어떻게 어울리는지 한 줄]</p>
+        </section>
+
+        <!-- ===== 5. 공익광고 ===== -->
+        <section class="slide">
+          <div class="media-frame full-video">
+            <video src="videos/gongik.mp4" playsinline preload="auto"></video>
+            <div class="missing-note">공익광고 영상<code>videos/gongik.mp4</code></div>
+          </div>
+        </section>
+
+        <!-- ===== 6. 협찬 (직접 말함) ===== -->
+        <section class="slide"></section>
+
+        <!-- ===== 7. DJ 클로징 (직접 말함) ===== -->
+        <!-- 안 보이는 단계 하나를 둠. 마지막 멘트 끝나고 한 번 더 누르면 이게 켜지면서 ON AIR 불이 꺼짐 -->
+        <section class="slide">
+          <div class="step" data-on-air="off"></div>
+        </section>
+
+        <!-- ===== 보너스: NG 장면 (안 쓰면 이 section을 통째로 지우면 됨) ===== -->
+        <section class="slide" data-on-air="off">
+          <div class="media-frame full-video">
+            <video src="videos/ng.mp4" playsinline preload="auto"></video>
+            <div class="missing-note">NG 장면 영상<code>videos/ng.mp4</code></div>
+          </div>
+        </section>
+
+      </div>
+      <div id="glitch-bars"></div>
+    </div>
+
+    <div id="on-air-flash"></div>
     <div id="practice-timer"></div>
     <audio id="background-music" src="videos/bgm.mp3" loop preload="auto"></audio>
-
-    <!-- ===== 대기 화면 ===== -->
-    <section class="slide standby" data-on-air="off">
-      <svg class="capsule-big"><use href="#capsule"/></svg>
-      <div class="eyebrow">2126 JEJU FM</div>
-      <h1 class="big-title">타임캡슐 라디오</h1>
-      <p class="subtitle">우리가 기억해야 할 과거의 이야기</p>
-      <p class="waiting-text">곧 방송이 시작됩니다</p>
-    </section>
-
-    <!-- ===== 1. DJ 오프닝 ===== -->
-    <section class="slide" data-corner="OPENING">
-      <div class="eyebrow">2126년 제주 FM</div>
-      <h1 class="title">타임캡슐 라디오</h1>
-      <p class="subtitle" style="margin-top:0">기억하고 싶은, 잊고 있었던 물건을 찾아서</p>
-      <div class="people-row">
-        <div class="person-card step">
-          <div class="avatar media-frame">
-            <img src="images/dj.jpg" alt="DJ 박미소">
-            <div class="missing-note">DJ 사진<code>images/dj.jpg</code></div>
-          </div>
-          <div class="role">DJ</div>
-          <div class="name">박미소</div>
-          <div class="about">타임캡슐 라디오 진행</div>
-        </div>
-        <div class="person-card guest step">
-          <div class="avatar media-frame">
-            <img src="images/halmae.jpg" alt="영등할매">
-            <div class="missing-note">할매 사진<code>images/halmae.jpg</code></div>
-          </div>
-          <div class="role">오늘의 게스트</div>
-          <div class="name">영등할매</div>
-          <div class="about">제주에서 오신 특별한 손님</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 2. 사연 소개 (영상) ===== -->
-    <section class="slide" data-corner="사연 소개">
-      <div class="media-frame full-video">
-        <video src="videos/sayeon.mp4" playsinline preload="auto"></video>
-        <div class="missing-note">사연 영상<code>videos/sayeon.mp4</code></div>
-      </div>
-    </section>
-
-    <!-- ===== 3. 패널토크: 제주칠머리당영등굿 (영상) ===== -->
-    <!-- 상단 라벨에 패널토크가 계속 떠 있어서 영상이 나오는 동안에도 택1이 뭔지 보임 -->
-    <section class="slide" data-corner="패널토크 · 영등할매와 함께">
-      <div class="media-frame full-video">
-        <video src="videos/yeongdeunggut.mp4" playsinline preload="auto"></video>
-        <div class="missing-note">제주칠머리당영등굿 영상<code>videos/yeongdeunggut.mp4</code></div>
-      </div>
-    </section>
-
-    <!-- ④ 왜 기억해야 할까? (필수 주제 1: 보존하고 계승해야 하는 이유) -->
-    <section class="slide" data-corner="패널토크 · ④ 왜 기억해야 할까?">
-      <div class="quote-mark">“</div>
-      <p class="big-quote">
-        사는 모습은 변해도,<br>
-        무엇을 <span class="highlight">소중하게</span> 생각했는지는<br>
-        기억할 가치가 있지 않겠수꽈.
-      </p>
-      <p class="quote-by">영등할매</p>
-      <p class="subtitle step">바다를 두려워하면서도 의지했던 마음이 굿 속에 남아 있어요</p>
-    </section>
-
-    <!-- ⑤ 어떻게 이어갈까? (필수 주제 2: 보존하고 계승하기 위한 방법) -->
-    <section class="slide" data-corner="패널토크 · ⑤ 어떻게 이어갈까?">
-      <h2 class="title">기억을 이어 가는 방법</h2>
-      <div class="method-row">
-        <div class="method-card step">
-          <div class="verb">알기</div>
-          <div class="how">학교에서 배우고<br>직접 찾아보기</div>
-        </div>
-        <div class="method-card step">
-          <div class="verb">기록하기</div>
-          <div class="how">전해 주는 분들의 이야기,<br>음악, 물건을 남기기</div>
-        </div>
-        <div class="method-card step">
-          <div class="verb">알리기</div>
-          <div class="how">라디오와 영상으로<br>더 많은 사람에게 나누기</div>
-        </div>
-      </div>
-      <p class="bottom-line step">“박물관에만 넣어두는 게 보존의 전부는 아니우다.”</p>
-    </section>
-
-    <!-- ===== 4. 음악 소개 ===== -->
-    <!-- 곡이 정해지면 [곡 제목], [소개] 부분만 바꾸면 됨 -->
-    <section class="slide" data-corner="음악 소개">
-      <div class="equalizer">
-        <span></span><span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span><span></span><span></span>
-        <span></span><span></span><span></span><span></span>
-      </div>
-      <div class="eyebrow">오늘의 음악</div>
-      <h2 class="song-title">[곡 제목]</h2>
-      <p class="song-info">[누가 부른 곡인지, 사연과 어떻게 어울리는지 한 줄]</p>
-    </section>
-
-    <!-- ===== 5. 공익광고 ===== -->
-    <section class="slide" data-corner="공익광고">
-      <div class="media-frame full-video">
-        <video src="videos/gongik.mp4" playsinline preload="auto"></video>
-        <div class="missing-note">공익광고 영상<code>videos/gongik.mp4</code></div>
-      </div>
-    </section>
-
-    <!-- ===== 6. 협찬 ===== -->
-    <!-- 음료 이름과 광고 문구가 정해지면 [ ] 부분만 바꾸면 됨 -->
-    <section class="slide" data-corner="협찬">
-      <div class="sponsor-box">
-        <div class="media-frame">
-          <img src="images/sponsor.jpg" alt="협찬 음료">
-          <div class="missing-note">협찬 음료 사진<code>images/sponsor.jpg</code></div>
-        </div>
-        <div class="sponsor-text">
-          <div class="eyebrow" style="margin-bottom:12px">SPONSOR</div>
-          <div class="sponsor-name">[음료 이름]</div>
-          <p class="slogan">[한 줄 광고 문구]</p>
-          <p class="thanks">이 방송은 [음료 이름]의 협찬으로 함께합니다</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===== 7. DJ 클로징 ===== -->
-    <section class="slide" data-corner="CLOSING">
-      <div class="eyebrow">오늘의 타임캡슐</div>
-      <h1 class="big-title">잘 기억해 줍서</h1>
-      <p class="capsule-label">오늘 꺼낸 물건: <b>기메</b> · 오늘의 이야기: <b>제주칠머리당영등굿</b></p>
-      <p class="subtitle">다음 시간에도 우리가 기억해야 할 과거의 이야기를 찾아오겠습니다</p>
-      <p class="sign-off step" data-on-air="off">타임캡슐 라디오 · 방송 종료 · 감사합니다</p>
-    </section>
-
-    <!-- ===== 보너스: NG 장면 (안 쓰면 이 section을 통째로 지우면 됨) ===== -->
-    <section class="slide" data-corner="보너스 · NG 장면" data-on-air="off">
-      <div class="media-frame full-video">
-        <video src="videos/ng.mp4" playsinline preload="auto"></video>
-        <div class="missing-note">NG 장면 영상<code>videos/ng.mp4</code></div>
-      </div>
-    </section>
-
+    <audio id="on-air-sound" src="videos/onair.mp3" preload="auto"></audio>
   </div>
 
   <script src="script.js"></script>

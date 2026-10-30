@@ -2,10 +2,8 @@
   --night: #0a0f1d;
   --deep-sea: #0e2433;
   --sea: #1d5c73;
+  --cyan: #5fd4f0;
   --amber: #f4b942;
-  --amber-soft: rgba(244, 185, 66, 0.16);
-  --paper: #f3e9d2;
-  --paper-ink: #3b2f22;
   --text: #eef2f7;
   --muted: #92a2b7;
   --on-air: #ff3b30;
@@ -13,7 +11,7 @@
 
   --font-title: "Black Han Sans", "Malgun Gothic", sans-serif;
   --font-body: "Gowun Dodum", "Malgun Gothic", sans-serif;
-  --font-quote: "Gowun Batang", "Batang", serif;
+  --font-digital: Consolas, "Courier New", monospace;
 }
 
 * {
@@ -41,24 +39,251 @@ body {
   height: 1080px;
   transform-origin: center center;
   overflow: hidden;
+  background: #000;
+}
+
+/* ON AIR 쪽으로 확대될 때 화면 전체를 한꺼번에 움직이려고 카메라 상자 하나에 전부 넣음 */
+#camera {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+}
+
+/* 평소에 화면 넘길 때 지직거리는 효과는 이 안에만 걸림 */
+#screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   background:
     radial-gradient(ellipse at 20% 0%, rgba(29, 92, 115, 0.45), transparent 55%),
     radial-gradient(ellipse at 90% 100%, rgba(244, 185, 66, 0.10), transparent 50%),
     linear-gradient(180deg, var(--night) 0%, var(--deep-sea) 100%);
 }
 
-/* 미래 느낌을 내는 옅은 격자 */
-#stage::before {
-  content: "";
+/* ---------- 배경: 3D 바닥 격자 ---------- */
+
+/* 부모에 원근을 주고 자식을 눕혀서 바닥처럼 보이게 함. 소실점은 화면 가운데보다 조금 위 */
+#floor-space {
   position: absolute;
   inset: 0;
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 80px 80px;
-  opacity: 0.35;
-  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+  perspective: 400px;
+  perspective-origin: 50% 45%;
   pointer-events: none;
+}
+
+#floor-grid {
+  position: absolute;
+  left: -60%;
+  width: 220%;
+  bottom: 0;
+  height: 100%;
+  transform-origin: 50% 100%;
+  transform: rotateX(75deg);
+  background-image:
+    linear-gradient(rgba(95, 212, 240, 0.22) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(95, 212, 240, 0.22) 2px, transparent 2px);
+  background-size: 120px 120px;
+  mask-image: linear-gradient(to top, #000 0%, #000 25%, transparent 85%);
+  animation: floor-flow 4s linear infinite;
+  will-change: transform;
+}
+
+/* 바닥을 딱 한 칸만큼 앞으로 밀었다가 되돌려서 끝없이 달려 나가는 것처럼 보이게 함.
+   이전엔 무늬 위치를 움직였는데 매 순간 다시 그려야 해서 느린 컴퓨터에선 버벅일 수 있어서 바꿈 */
+@keyframes floor-flow {
+  from {
+    transform: rotateX(75deg) translateY(0);
+  }
+  to {
+    transform: rotateX(75deg) translateY(120px);
+  }
+}
+
+#horizon-glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 568px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(95, 212, 240, 0.5), rgba(244, 185, 66, 0.6), rgba(95, 212, 240, 0.5), transparent);
+  box-shadow: 0 0 24px 4px rgba(95, 212, 240, 0.25);
+  pointer-events: none;
+}
+
+/* ---------- 배경: 스캔 라인 ---------- */
+
+#scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 160px;
+  background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(95, 212, 240, 0.04) 60%,
+      rgba(95, 212, 240, 0.18) 97%,
+      rgba(238, 242, 247, 0.5) 100%);
+  animation: scan-down 7s linear infinite;
+  pointer-events: none;
+  z-index: 8;
+}
+
+/* 7초 중 앞의 4초만 훑고 나머지는 쉼. 계속 지나가면 정신없음 */
+@keyframes scan-down {
+  0% {
+    transform: translateY(-160px);
+  }
+  57%,
+  100% {
+    transform: translateY(1080px);
+  }
+}
+
+/* ---------- HUD 모서리 ---------- */
+
+.hud-corner {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  border-color: rgba(95, 212, 240, 0.7);
+  border-style: solid;
+  border-width: 0;
+  z-index: 9;
+  pointer-events: none;
+  animation: hud-breathe 3s ease-in-out infinite;
+}
+
+.hud-corner.top-left {
+  top: 22px;
+  left: 22px;
+  border-top-width: 3px;
+  border-left-width: 3px;
+}
+
+.hud-corner.top-right {
+  top: 22px;
+  right: 22px;
+  border-top-width: 3px;
+  border-right-width: 3px;
+}
+
+.hud-corner.bottom-left {
+  bottom: 22px;
+  left: 22px;
+  border-bottom-width: 3px;
+  border-left-width: 3px;
+}
+
+.hud-corner.bottom-right {
+  bottom: 22px;
+  right: 22px;
+  border-bottom-width: 3px;
+  border-right-width: 3px;
+}
+
+@keyframes hud-breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.hud-readout {
+  position: absolute;
+  bottom: 30px;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--font-digital);
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: rgba(95, 212, 240, 0.75);
+  pointer-events: none;
+}
+
+.hud-readout.left {
+  left: 88px;
+}
+
+.hud-readout.right {
+  right: 88px;
+}
+
+.signal-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 20px;
+}
+
+.signal-bars span {
+  width: 5px;
+  background: var(--cyan);
+  animation: signal-flicker 1.6s steps(1) infinite;
+}
+
+.signal-bars span:nth-child(1) { height: 30%; }
+.signal-bars span:nth-child(2) { height: 50%; animation-delay: 0.3s; }
+.signal-bars span:nth-child(3) { height: 70%; animation-delay: 0.7s; }
+.signal-bars span:nth-child(4) { height: 85%; animation-delay: 1.1s; }
+.signal-bars span:nth-child(5) { height: 100%; animation-delay: 0.5s; }
+
+@keyframes signal-flicker {
+  0% { opacity: 1; }
+  40% { opacity: 0.25; }
+  55% { opacity: 1; }
+}
+
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cyan);
+  animation: blink 1.2s steps(1) infinite;
+}
+
+/* 양옆 가운데에 세로 눈금자. 작은 표시가 천천히 오르내림 */
+.hud-ruler {
+  position: absolute;
+  top: 340px;
+  width: 14px;
+  height: 400px;
+  z-index: 9;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(95, 212, 240, 0.45) 0 2px, transparent 2px 20px);
+  opacity: 0.6;
+}
+
+.hud-ruler.left {
+  left: 30px;
+}
+
+.hud-ruler.right {
+  right: 30px;
+}
+
+.hud-ruler::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  width: 26px;
+  height: 3px;
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+  animation: ruler-slide 6s ease-in-out infinite alternate;
+}
+
+.hud-ruler.right::after {
+  animation-delay: -3s;
+}
+
+@keyframes ruler-slide {
+  from {
+    top: 0;
+  }
+  to {
+    top: 397px;
+  }
 }
 
 /* ---------- 항상 떠 있는 방송 화면 틀 ---------- */
@@ -69,7 +294,7 @@ body {
   left: 0;
   right: 0;
   height: 110px;
-  padding: 0 64px;
+  padding: 0 96px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -99,20 +324,6 @@ body {
   letter-spacing: 3px;
 }
 
-#corner-label {
-  font-size: 26px;
-  padding: 10px 28px;
-  border: 1px solid rgba(244, 185, 66, 0.5);
-  border-radius: 999px;
-  color: var(--amber);
-  background: var(--amber-soft);
-  transition: opacity 0.4s;
-}
-
-#corner-label:empty {
-  opacity: 0;
-}
-
 .top-right {
   display: flex;
   align-items: center;
@@ -120,12 +331,13 @@ body {
 }
 
 #future-clock {
+  font-family: var(--font-digital);
   font-size: 24px;
   color: var(--muted);
   letter-spacing: 2px;
-  font-variant-numeric: tabular-nums;
 }
 
+/* 불이 깜빡이는 연출이 뭉개지지 않게 바뀌는 시간을 아주 짧게 둠 */
 #on-air-lamp {
   font-family: var(--font-title);
   font-size: 26px;
@@ -134,7 +346,7 @@ body {
   border-radius: 8px;
   border: 2px solid #4a4f5a;
   color: #4a4f5a;
-  transition: all 0.5s;
+  transition: background 0.05s, color 0.05s, border-color 0.05s, box-shadow 0.05s;
 }
 
 /* 방송 중일 때만 빨간 불이 들어옴 */
@@ -171,16 +383,91 @@ body {
   }
 }
 
+/* ---------- 화면 전환 효과 ---------- */
+
+/* 평소에 넘길 때: 0.35초 동안 화면이 흔들리고 색이 어긋남 */
+#camera.is-glitching #screen {
+  animation: screen-glitch 0.35s steps(1) both;
+}
+
+@keyframes screen-glitch {
+  0% { transform: translate(-8px, 2px) skewX(-3deg); filter: hue-rotate(60deg) saturate(1.8); }
+  20% { transform: translate(6px, -3px); filter: brightness(1.7); }
+  40% { transform: translate(-4px, 1px) skewX(2deg); filter: hue-rotate(-50deg); }
+  60% { transform: translate(3px, 0); filter: contrast(1.6); }
+  80% { transform: translate(-1px, 1px); filter: none; }
+  100% { transform: none; filter: none; }
+}
+
+#glitch-bars {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(transparent 18%, rgba(95, 212, 240, 0.55) 18%, rgba(95, 212, 240, 0.55) 19.5%, transparent 19.5%),
+    linear-gradient(transparent 46%, rgba(244, 185, 66, 0.5) 46%, rgba(244, 185, 66, 0.5) 49%, transparent 49%),
+    linear-gradient(transparent 71%, rgba(255, 59, 48, 0.4) 71%, rgba(255, 59, 48, 0.4) 72%, transparent 72%),
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0 2px, transparent 2px 5px);
+}
+
+#camera.is-glitching #glitch-bars {
+  animation: bars-flash 0.35s steps(1) both;
+}
+
+@keyframes bars-flash {
+  0% { opacity: 1; background-position: 0 0; }
+  25% { opacity: 0.8; background-position: 0 -90px; }
+  50% { opacity: 1; background-position: 0 140px; }
+  75% { opacity: 0.4; background-position: 0 -40px; }
+  100% { opacity: 0; }
+}
+
+/* ON AIR 켜지는 순간 불빛 자리에서 번쩍. 카메라 밖에 있어서 확대 배율과 상관없이 크기가 그대로임 */
+#on-air-flash {
+  --flash-x: 50%;
+  --flash-y: 50%;
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(circle 900px at var(--flash-x) var(--flash-y), rgba(255, 255, 255, 0.95) 0%, rgba(255, 90, 70, 0.7) 30%, rgba(255, 59, 48, 0) 100%);
+}
+
+#on-air-flash.is-flashing {
+  animation: flash-burst 0.6s ease-out both;
+}
+
+@keyframes flash-burst {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ON AIR 꺼지는 순간은 화면이 툭 어두워졌다 돌아옴 */
+#on-air-flash.is-powering-down {
+  background: #000;
+  animation: power-down 0.6s ease-out both;
+}
+
+@keyframes power-down {
+  0% { opacity: 0; }
+  10% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
 #practice-timer {
   position: absolute;
-  right: 64px;
-  bottom: 36px;
-  z-index: 20;
+  right: 88px;
+  bottom: 70px;
+  z-index: 50;
+  font-family: var(--font-digital);
   font-size: 26px;
   padding: 10px 20px;
   border-radius: 10px;
   background: rgba(0, 0, 0, 0.6);
-  font-variant-numeric: tabular-nums;
   display: none;
 }
 
@@ -209,7 +496,7 @@ body {
   text-align: center;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.6s ease, visibility 0.6s;
+  transition: opacity 0.3s ease, visibility 0.3s;
   z-index: 5;
 }
 
@@ -218,16 +505,12 @@ body {
   visibility: visible;
 }
 
-/* 키를 누를 때마다 하나씩 나타나는 요소 */
 .step {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
 }
 
 .step.is-shown {
   opacity: 1;
-  transform: none;
 }
 
 .eyebrow {
@@ -244,22 +527,10 @@ body {
   font-weight: normal;
 }
 
-.title {
-  font-family: var(--font-title);
-  font-size: 84px;
-  line-height: 1.2;
-  font-weight: normal;
-  margin-bottom: 28px;
-}
-
 .subtitle {
   font-size: 40px;
   color: var(--muted);
   margin-top: 28px;
-}
-
-.highlight {
-  color: var(--amber);
 }
 
 /* ---------- 대기 화면 ---------- */
@@ -291,62 +562,6 @@ body {
   }
 }
 
-/* ---------- 인물 카드 ---------- */
-
-.people-row {
-  display: flex;
-  gap: 72px;
-  margin-top: 56px;
-}
-
-.person-card {
-  width: 460px;
-  padding: 44px 36px;
-  border-radius: 28px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.person-card .role {
-  font-size: 28px;
-  color: var(--amber);
-  letter-spacing: 4px;
-}
-
-.person-card .name {
-  font-family: var(--font-title);
-  font-size: 72px;
-  margin: 12px 0 8px;
-}
-
-.person-card .about {
-  font-size: 28px;
-  color: var(--muted);
-}
-
-.person-card .avatar {
-  width: 200px;
-  height: 200px;
-  margin: 0 auto 24px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.person-card .avatar .missing-note {
-  font-size: 22px;
-  border-radius: 50%;
-}
-
-.person-card .avatar .missing-note code {
-  font-size: 18px;
-}
-
-.person-card.guest {
-  border-color: rgba(244, 185, 66, 0.5);
-  background: var(--amber-soft);
-}
-
 /* ---------- 사진, 영상 칸 ---------- */
 
 .media-frame {
@@ -357,16 +572,13 @@ body {
   border: 1px solid var(--line);
 }
 
-.media-frame img,
 .media-frame video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
   display: block;
 }
 
 /* 파일이 아직 없을 때 보이는 빈칸. 어떤 파일을 넣으면 되는지 바로 알려 줌 */
-.media-frame.is-missing img,
 .media-frame.is-missing video {
   display: none;
 }
@@ -386,7 +598,7 @@ body {
 }
 
 .media-frame .missing-note code {
-  font-family: Consolas, monospace;
+  font-family: var(--font-digital);
   font-size: 26px;
   color: var(--amber);
 }
@@ -395,64 +607,16 @@ body {
   display: flex;
 }
 
-/* ---------- 할매 한마디 ---------- */
-
-.quote-mark {
-  font-family: var(--font-quote);
-  font-size: 200px;
-  line-height: 0.6;
-  color: var(--amber);
-  opacity: 0.6;
+/* 사연, 영등굿, 공익광고, NG 영상 칸 */
+.full-video {
+  width: 1540px;
+  height: 790px;
+  background: #000;
 }
 
-.big-quote {
-  font-family: var(--font-quote);
-  font-size: 64px;
-  line-height: 1.5;
-  max-width: 1500px;
-  margin-top: 30px;
-}
-
-.quote-by {
-  font-size: 34px;
-  color: var(--amber);
-  margin-top: 40px;
-}
-
-/* ---------- 보존 방법 ---------- */
-
-.method-row {
-  display: flex;
-  gap: 40px;
-  margin-top: 20px;
-}
-
-.method-card {
-  width: 480px;
-  padding: 44px 36px;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--line);
-  text-align: left;
-}
-
-.method-card .verb {
-  font-family: var(--font-title);
-  font-size: 72px;
-  color: var(--amber);
-}
-
-.method-card .how {
-  font-size: 32px;
-  line-height: 1.5;
-  margin-top: 14px;
-}
-
-.bottom-line {
-  margin-top: 56px;
-  font-family: var(--font-quote);
-  font-size: 38px;
-  color: var(--muted);
+/* 영상 가장자리가 잘리면 자막이나 얼굴이 날아가서, 화면을 꽉 채우는 대신 영상 전체가 다 보이게 함 */
+.full-video video {
+  object-fit: contain;
 }
 
 /* ---------- 음악 소개 ---------- */
@@ -499,79 +663,4 @@ body {
   font-size: 40px;
   color: var(--muted);
   margin-top: 20px;
-}
-
-/* ---------- 사연, 영등굿, 공익광고, NG 영상 ---------- */
-
-.full-video {
-  width: 1540px;
-  height: 790px;
-  background: #000;
-}
-
-/* 영상 가장자리가 잘리면 자막이나 얼굴이 날아가서, 화면을 꽉 채우는 대신 영상 전체가 다 보이게 함 */
-.full-video video {
-  object-fit: contain;
-}
-
-/* ---------- 협찬 ---------- */
-
-.sponsor-box {
-  display: flex;
-  align-items: center;
-  gap: 80px;
-}
-
-.sponsor-box .media-frame {
-  width: 620px;
-  height: 620px;
-  border-radius: 50%;
-}
-
-.sponsor-box .media-frame .missing-note {
-  border-radius: 50%;
-}
-
-.sponsor-text {
-  text-align: left;
-}
-
-.sponsor-text .sponsor-name {
-  font-family: var(--font-title);
-  font-size: 104px;
-  color: var(--amber);
-  line-height: 1.15;
-}
-
-.sponsor-text .slogan {
-  font-size: 44px;
-  margin-top: 24px;
-}
-
-.sponsor-text .thanks {
-  font-size: 32px;
-  color: var(--muted);
-  margin-top: 40px;
-}
-
-/* ---------- 클로징 ---------- */
-
-.capsule-label {
-  margin-top: 40px;
-  font-size: 36px;
-  padding: 20px 40px;
-  border-radius: 999px;
-  border: 1px dashed rgba(244, 185, 66, 0.6);
-}
-
-.capsule-label b {
-  color: var(--amber);
-  font-weight: normal;
-}
-
-.sign-off {
-  margin-top: 60px;
-  font-size: 34px;
-  color: var(--muted);
-  letter-spacing: 4px;
 }
