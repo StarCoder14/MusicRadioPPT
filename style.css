@@ -234,6 +234,17 @@ body {
   55% { opacity: 1; }
 }
 
+/* 마이크가 켜지면 깜빡임을 멈추고 음량만큼만 불이 들어옴 */
+.signal-bars.is-meter span {
+  animation: none;
+  opacity: 0.2;
+}
+
+.signal-bars.is-meter span.is-lit {
+  opacity: 1;
+  box-shadow: 0 0 6px var(--cyan);
+}
+
 .rec-dot {
   width: 10px;
   height: 10px;
@@ -369,18 +380,11 @@ body {
   position: absolute;
   left: 0;
   bottom: 0;
-  width: 200%;
-  height: 120px;
+  width: 1920px;
+  height: 240px;
   z-index: 1;
-  opacity: 0.55;
-  animation: waves-flow 18s linear infinite;
+  opacity: 0.75;
   pointer-events: none;
-}
-
-@keyframes waves-flow {
-  to {
-    transform: translateX(-50%);
-  }
 }
 
 /* ---------- 화면 전환 효과 ---------- */
@@ -496,13 +500,37 @@ body {
   text-align: center;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s;
   z-index: 5;
 }
 
 .slide.is-active {
   opacity: 1;
   visibility: visible;
+}
+
+/* 신호가 잡히는 느낌: 흐릿하고 살짝 작게 시작해서, 한 번 반짝한 뒤 또렷해짐 */
+.slide.is-materializing {
+  animation: materialize 0.45s ease-out both;
+}
+
+@keyframes materialize {
+  0% {
+    opacity: 0;
+    filter: blur(14px) brightness(1.6);
+    transform: scale(0.97);
+  }
+  35% {
+    opacity: 0.7;
+    filter: blur(6px) brightness(2);
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
 }
 
 .step {

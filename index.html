@@ -35,10 +35,8 @@
         <div id="horizon-glow"></div>
         <div id="scan-line"></div>
 
-        <svg id="sea-waves" viewBox="0 0 3840 120" preserveAspectRatio="none">
-          <path d="M0 70 Q120 40 240 70 T480 70 T720 70 T960 70 T1200 70 T1440 70 T1680 70 T1920 70 T2160 70 T2400 70 T2640 70 T2880 70 T3120 70 T3360 70 T3600 70 T3840 70" fill="none" stroke="#1d5c73" stroke-width="3"/>
-          <path d="M0 92 Q160 72 320 92 T640 92 T960 92 T1280 92 T1600 92 T1920 92 T2240 92 T2560 92 T2880 92 T3200 92 T3520 92 T3840 92" fill="none" stroke="#f4b942" stroke-width="2" opacity="0.4"/>
-        </svg>
+        <!-- 바닥 물결. 마이크 소리에 맞춰 매 순간 새로 그림 -->
+        <canvas id="sea-waves" width="1920" height="240"></canvas>
 
         <!-- ===== HUD 테두리 ===== -->
         <div class="hud-corner top-left"></div>

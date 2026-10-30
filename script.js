@@ -7,6 +7,10 @@ const slides = Array.from(document.querySelectorAll(".slide"));
 const futureClock = document.getElementById("future-clock");
 const practiceTimer = document.getElementById("practice-timer");
 const backgroundMusic = document.getElementById("background-music");
+const seaWaves = document.getElementById("sea-waves");
+const waveBrush = seaWaves.getContext("2d");
+const signalBarsBox = document.querySelector(".signal-bars");
+const signalBars = Array.from(signalBarsBox.querySelectorAll("span"));
 
 const STAGE_WIDTH = 1920;
 const STAGE_HEIGHT = 1080;
@@ -16,6 +20,15 @@ const LONGEST_SHOW_SECONDS = 12 * 60;
 const OFF_AIR_STEP = '.step[data-on-air="off"]';
 const LAMP_ZOOM_SCALE = 5;
 const GLITCH_MILLISECONDS = 350;
+const EMPTY_MOMENT_MILLISECONDS = 120;
+const MATERIALIZE_MILLISECONDS = 450;
+
+// 마이크 소리 크기 기준. 교실에서 물결이 너무 출렁이면 QUIET를 올리고, 말해도 잘 안 움직이면 LOUD를 내림
+const MICROPHONE_QUIET_LEVEL = 0.015;
+const MICROPHONE_LOUD_LEVEL = 0.15;
+const TREMBLE_HEIGHT = 18;
+const WAVE_FLOW_SPEED = 107;
+const POINT_GAP = 4;
 
 let currentSlideNumber = 0;
 let showStartTime = null;
@@ -97,7 +110,6 @@ function goToSlide(nextSlideNumber, showAllSteps) {
   stepsOf(arrivingSlide).forEach((step) => setStepVisible(step, showAllSteps));
 
   arrivingSlide.classList.add("is-active");
-  playVideosIn(arrivingSlide);
 }
 
 // 클래스를 뗐다가 다시 붙여야 애니메이션이 처음부터 다시 돎
@@ -107,9 +119,25 @@ function restartAnimation(element, className) {
   element.classList.add(className);
 }
 
-function glitchScreen() {
+// TV 채널 돌릴 때처럼: 지지직 → 잠깐 빈 화면 → 신호가 잡히면서 다음 내용이 또렷해짐
+// 이전엔 지지직하는 동안 다음 내용이 같이 떠서 일그러진 채로 먼저 보였음
+async function playGlitchTransition(applyChange) {
+  isTransitioning = true;
+
   restartAnimation(camera, "is-glitching");
-  setTimeout(() => camera.classList.remove("is-glitching"), GLITCH_MILLISECONDS);
+  await wait(GLITCH_MILLISECONDS);
+  camera.classList.remove("is-glitching");
+
+  slides[currentSlideNumber].classList.remove("is-active");
+  await wait(EMPTY_MOMENT_MILLISECONDS);
+
+  applyChange();
+  const arrivingSlide = slides[currentSlideNumber];
+  restartAnimation(arrivingSlide, "is-materializing");
+  await wait(MATERIALIZE_MILLISECONDS);
+  arrivingSlide.classList.remove("is-materializing");
+
+  isTransitioning = false;
 }
 
 function keepBetween(value, smallest, largest) {
@@ -203,14 +231,20 @@ async function playOnAirTransition(turnOn, applyChange) {
   isTransitioning = false;
 }
 
-// 불 상태가 바뀌면 줌 연출, 그대로면 평소처럼 바로 바꿈
-function runChange(nextIsOnAir, applyChange, isNewSlide) {
+// 불 상태가 바뀌면 줌 연출, 그대로면 글리치 연출
+async function runChange(nextIsOnAir, applyChange, isNewSlide) {
   if (nextIsOnAir !== isOnAirNow()) {
-    playOnAirTransition(nextIsOnAir, applyChange);
-    return;
+    await playOnAirTransition(nextIsOnAir, applyChange);
+  } else if (isNewSlide) {
+    await playGlitchTransition(applyChange);
+  } else {
+    applyChange();
   }
-  if (isNewSlide) glitchScreen();
-  applyChange();
+
+  // 화면이 다 나타난 뒤에 영상을 틀어야 안 보이는 동안 앞부분이 날아가지 않음
+  if (isNewSlide) {
+    playVideosIn(slides[currentSlideNumber]);
+  }
 }
 
 function changeStep(slide, step, isVisible) {
@@ -337,6 +371,122 @@ function markMissingMedia() {
   });
 }
 
+// ---------- 마이크에 반응하는 바닥 물결 ----------
+
+// 물결 두 줄. calmHeight는 조용할 때 높이, voiceHeight는 크게 말할 때 더해지는 높이, tremble은 목소리 잔떨림을 얼마나 얹을지
+const seaLines = [
+  { baseY: 170, calmHeight: 15, voiceHeight: 50, length: 480, tremble: 1, width: 3, color: "rgba(42, 127, 155, 0.95)" },
+  { baseY: 200, calmHeight: 10, voiceHeight: 28, length: 640, tremble: 0.5, width: 2, color: "rgba(244, 185, 66, 0.5)" },
+];
+
+let microphone = null;
+let isMicrophoneOn = true;
+let voiceLevel = 0;
+let waveLevel = 0;
+
+async function startMicrophone() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+  try {
+    // 영상 소리도 같이 받으려고 에코 제거, 잡음 제거, 자동 음량을 다 끔
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    });
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 1024;
+    audioContext.createMediaStreamSource(stream).connect(analyser);
+    microphone = { audioContext, analyser, samples: new Float32Array(analyser.fftSize), loudestSample: 1 };
+  } catch (error) {
+    console.warn("마이크를 못 써서 물결은 그냥 흘러가게 둠", error);
+  }
+}
+
+// 브라우저는 사람이 키를 한 번 누르기 전까지 소리 처리를 멈춰 둠. 그래서 첫 키 입력 때 깨움
+function wakeMicrophone() {
+  if (microphone && microphone.audioContext.state === "suspended") {
+    microphone.audioContext.resume();
+  }
+}
+
+function isListening() {
+  return microphone !== null && isMicrophoneOn;
+}
+
+// 마이크로 들어온 소리 조각들의 평균 세기를 재서 0(조용함)~1(아주 큼)으로 바꿈
+function readVoiceLevel() {
+  if (!isListening()) return 0;
+  const samples = microphone.samples;
+  microphone.analyser.getFloatTimeDomainData(samples);
+
+  let sumOfSquares = 0;
+  let loudestSample = 0.0001;
+  for (const sample of samples) {
+    sumOfSquares += sample * sample;
+    loudestSample = Math.max(loudestSample, Math.abs(sample));
+  }
+  microphone.loudestSample = loudestSample;
+
+  const loudness = Math.sqrt(sumOfSquares / samples.length);
+  return keepBetween(
+    (loudness - MICROPHONE_QUIET_LEVEL) / (MICROPHONE_LOUD_LEVEL - MICROPHONE_QUIET_LEVEL),
+    0,
+    1
+  );
+}
+
+// 커질 땐 빨리 따라가고 작아질 땐 천천히. 말이 끝나도 파도처럼 천천히 가라앉게 하려고
+function followLevel(currentLevel, targetLevel) {
+  const speed = targetLevel > currentLevel ? 0.35 : 0.05;
+  return currentLevel + (targetLevel - currentLevel) * speed;
+}
+
+// 실제 목소리 파형에서 이 위치에 해당하는 값을 꺼냄. 가장 큰 값으로 나눠서 -1~1로 맞춤
+function voiceShapeAt(x) {
+  if (!isListening()) return 0;
+  const samples = microphone.samples;
+  const index = Math.floor((x / STAGE_WIDTH) * (samples.length - 1));
+  return samples[index] / microphone.loudestSample;
+}
+
+function drawSeaWaves(time) {
+  const seconds = time / 1000;
+  voiceLevel = followLevel(voiceLevel, readVoiceLevel());
+  // 물결은 방송 중일 때만 목소리를 따라감. HUD 막대는 대기 화면에서도 움직여서 마이크 확인용으로 씀
+  waveLevel = followLevel(waveLevel, isOnAirNow() ? voiceLevel : 0);
+
+  waveBrush.clearRect(0, 0, seaWaves.width, seaWaves.height);
+  for (const line of seaLines) {
+    const swellHeight = line.calmHeight + waveLevel * line.voiceHeight;
+    waveBrush.beginPath();
+    for (let x = 0; x <= STAGE_WIDTH; x += POINT_GAP) {
+      const swell = Math.sin((2 * Math.PI * (x + seconds * WAVE_FLOW_SPEED)) / line.length) * swellHeight;
+      const tremble = voiceShapeAt(x) * TREMBLE_HEIGHT * line.tremble * waveLevel;
+      const y = line.baseY + swell + tremble;
+      if (x === 0) {
+        waveBrush.moveTo(x, y);
+      } else {
+        waveBrush.lineTo(x, y);
+      }
+    }
+    waveBrush.lineWidth = line.width;
+    waveBrush.strokeStyle = line.color;
+    waveBrush.shadowColor = line.color;
+    waveBrush.shadowBlur = 6 + waveLevel * 18;
+    waveBrush.stroke();
+  }
+
+  updateSignalBars();
+  requestAnimationFrame(drawSeaWaves);
+}
+
+// 마이크가 켜져 있으면 HUD 막대 5개가 음량계가 됨. 마이크가 없으면 원래처럼 깜빡이기만 함
+function updateSignalBars() {
+  signalBarsBox.classList.toggle("is-meter", isListening());
+  if (!isListening()) return;
+  const litCount = Math.max(1, Math.round(voiceLevel * signalBars.length));
+  signalBars.forEach((bar, index) => bar.classList.toggle("is-lit", index < litCount));
+}
+
 function hideCursorWhenIdle() {
   let idleTimer;
   document.addEventListener("mousemove", () => {
@@ -347,6 +497,7 @@ function hideCursorWhenIdle() {
 }
 
 document.addEventListener("keydown", (event) => {
+  wakeMicrophone();
   const key = event.key;
   if (key === "ArrowRight" || key === " " || key === "PageDown" || key === "Enter") {
     event.preventDefault();
@@ -366,16 +517,23 @@ document.addEventListener("keydown", (event) => {
     togglePauseVideosInCurrentSlide();
   } else if (key === "t" || key === "T" || key === "ㅅ") {
     practiceTimer.classList.toggle("is-visible");
+  } else if (key === "m" || key === "M" || key === "ㅡ") {
+    isMicrophoneOn = !isMicrophoneOn;
   }
 });
 
-stage.addEventListener("click", goForward);
+stage.addEventListener("click", () => {
+  wakeMicrophone();
+  goForward();
+});
 window.addEventListener("resize", fitStageToWindow);
 
 fitStageToWindow();
 markMissingMedia();
 slides[0].classList.add("is-active");
 setOnAir(shouldBeOnAir(slides[0], false));
+startMicrophone();
+requestAnimationFrame(drawSeaWaves);
 updateFutureClock();
 setInterval(updateFutureClock, 1000);
 setInterval(updatePracticeTimer, 500);
