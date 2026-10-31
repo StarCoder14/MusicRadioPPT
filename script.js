@@ -9,11 +9,6 @@ const practiceTimer = document.getElementById("practice-timer");
 const backgroundMusic = document.getElementById("background-music");
 const seaWaves = document.getElementById("sea-waves");
 const waveBrush = seaWaves.getContext("2d");
-const signalBarsBox = document.querySelector(".signal-bars");
-const signalBars = Array.from(signalBarsBox.querySelectorAll("span"));
-const voiceOrb = document.getElementById("voice-orb");
-const orbCanvas = document.getElementById("voice-orb-canvas");
-const orbBrush = orbCanvas.getContext("2d");
 
 const STAGE_WIDTH = 1920;
 const STAGE_HEIGHT = 1080;
@@ -26,10 +21,6 @@ const GLITCH_MILLISECONDS = 350;
 const EMPTY_MOMENT_MILLISECONDS = 120;
 const MATERIALIZE_MILLISECONDS = 450;
 
-// 마이크 소리 크기 기준. 교실에서 물결이 너무 출렁이면 QUIET를 올리고, 말해도 잘 안 움직이면 LOUD를 내림
-const MICROPHONE_QUIET_LEVEL = 0.015;
-const MICROPHONE_LOUD_LEVEL = 0.15;
-const TREMBLE_HEIGHT = 18;
 const WAVE_FLOW_SPEED = 107;
 const POINT_GAP = 4;
 
@@ -70,7 +61,6 @@ function setOnAir(isOn) {
   if (isOn && showStartTime === null) {
     showStartTime = Date.now();
   }
-  updateVoiceOrbVisibility();
 }
 
 // 화면을 바꾸기 전에, 바꾸고 나면 불이 켜져 있어야 하는지 미리 계산함. 불 상태가 바뀔 때만 줌 연출을 하려고
@@ -114,7 +104,6 @@ function goToSlide(nextSlideNumber, showAllSteps) {
   stepsOf(arrivingSlide).forEach((step) => setStepVisible(step, showAllSteps));
 
   arrivingSlide.classList.add("is-active");
-  updateVoiceOrbVisibility();
 }
 
 // 클래스를 뗐다가 다시 붙여야 애니메이션이 처음부터 다시 돎
@@ -376,98 +365,21 @@ function markMissingMedia() {
   });
 }
 
-// ---------- 마이크에 반응하는 바닥 물결 ----------
+// ---------- 바닥 물결 ----------
 
-// 물결 두 줄. calmHeight는 조용할 때 높이, voiceHeight는 크게 말할 때 더해지는 높이, tremble은 목소리 잔떨림을 얼마나 얹을지
+// 물결 두 줄. height는 출렁이는 높이, length는 물결 한 번의 길이
 const seaLines = [
-  { baseY: 170, calmHeight: 15, voiceHeight: 50, length: 480, tremble: 1, width: 3, color: "rgba(42, 127, 155, 0.95)" },
-  { baseY: 200, calmHeight: 10, voiceHeight: 28, length: 640, tremble: 0.5, width: 2, color: "rgba(244, 185, 66, 0.5)" },
+  { baseY: 170, height: 15, length: 480, width: 3, color: "rgba(42, 127, 155, 0.95)" },
+  { baseY: 200, height: 10, length: 640, width: 2, color: "rgba(244, 185, 66, 0.5)" },
 ];
 
-let microphone = null;
-let isMicrophoneOn = true;
-let voiceLevel = 0;
-let waveLevel = 0;
-
-async function startMicrophone() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-  try {
-    // 영상 소리도 같이 받으려고 에코 제거, 잡음 제거, 자동 음량을 다 끔
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
-    });
-    const audioContext = new AudioContext();
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 1024;
-    audioContext.createMediaStreamSource(stream).connect(analyser);
-    microphone = {
-      audioContext,
-      analyser,
-      samples: new Float32Array(analyser.fftSize),
-      frequencies: new Uint8Array(analyser.frequencyBinCount),
-      loudestSample: 1,
-    };
-  } catch (error) {
-    console.warn("마이크를 못 써서 물결은 그냥 흘러가게 둠", error);
-  }
-}
-
-// 브라우저는 사람이 키를 한 번 누르기 전까지 소리 처리를 멈춰 둠. 그래서 첫 키 입력 때 깨움
-function wakeMicrophone() {
-  if (microphone && microphone.audioContext.state === "suspended") {
-    microphone.audioContext.resume();
-  }
-}
-
-function isListening() {
-  return microphone !== null && isMicrophoneOn;
-}
-
-// 마이크로 들어온 소리 조각들의 평균 세기를 재서 0(조용함)~1(아주 큼)으로 바꿈
-function readVoiceLevel() {
-  if (!isListening()) return 0;
-  const samples = microphone.samples;
-  microphone.analyser.getFloatTimeDomainData(samples);
-
-  let sumOfSquares = 0;
-  let loudestSample = 0.0001;
-  for (const sample of samples) {
-    sumOfSquares += sample * sample;
-    loudestSample = Math.max(loudestSample, Math.abs(sample));
-  }
-  microphone.loudestSample = loudestSample;
-
-  const loudness = Math.sqrt(sumOfSquares / samples.length);
-  return keepBetween(
-    (loudness - MICROPHONE_QUIET_LEVEL) / (MICROPHONE_LOUD_LEVEL - MICROPHONE_QUIET_LEVEL),
-    0,
-    1
-  );
-}
-
-// 커질 땐 빨리 따라가고 작아질 땐 천천히. 말이 끝나도 파도처럼 천천히 가라앉게 하려고
-function followLevel(currentLevel, targetLevel) {
-  const speed = targetLevel > currentLevel ? 0.35 : 0.05;
-  return currentLevel + (targetLevel - currentLevel) * speed;
-}
-
-// 실제 목소리 파형에서 이 위치에 해당하는 값을 꺼냄. 가장 큰 값으로 나눠서 -1~1로 맞춤
-function voiceShapeAt(x) {
-  if (!isListening()) return 0;
-  const samples = microphone.samples;
-  const index = Math.floor((x / STAGE_WIDTH) * (samples.length - 1));
-  return samples[index] / microphone.loudestSample;
-}
-
-function drawSeaWaves(seconds) {
+function drawSeaWaves(time) {
+  const seconds = time / 1000;
   waveBrush.clearRect(0, 0, seaWaves.width, seaWaves.height);
   for (const line of seaLines) {
-    const swellHeight = line.calmHeight + waveLevel * line.voiceHeight;
     waveBrush.beginPath();
     for (let x = 0; x <= STAGE_WIDTH; x += POINT_GAP) {
-      const swell = Math.sin((2 * Math.PI * (x + seconds * WAVE_FLOW_SPEED)) / line.length) * swellHeight;
-      const tremble = voiceShapeAt(x) * TREMBLE_HEIGHT * line.tremble * waveLevel;
-      const y = line.baseY + swell + tremble;
+      const y = line.baseY + Math.sin((2 * Math.PI * (x + seconds * WAVE_FLOW_SPEED)) / line.length) * line.height;
       if (x === 0) {
         waveBrush.moveTo(x, y);
       } else {
@@ -477,131 +389,10 @@ function drawSeaWaves(seconds) {
     waveBrush.lineWidth = line.width;
     waveBrush.strokeStyle = line.color;
     waveBrush.shadowColor = line.color;
-    waveBrush.shadowBlur = 6 + waveLevel * 18;
+    waveBrush.shadowBlur = 6;
     waveBrush.stroke();
   }
-}
-
-// ---------- 가운데 목소리 반응 원 ----------
-
-const ORB_CENTER = 450;
-const ORB_RING_RADIUS = 135;
-const ORB_BAR_COUNT = 64;
-const ORB_BAR_LONGEST = 110;
-const RIPPLE_LIFETIME_SECONDS = 1.6;
-const RIPPLE_FARTHEST_RADIUS = 440;
-const RIPPLE_GAP_SECONDS = 0.4;
-const LOUD_ENOUGH_FOR_RIPPLE = 0.35;
-const LOUD_ENOUGH_FOR_GOLD = 0.7;
-
-// 막대는 왼쪽 절반만 계산하고 오른쪽은 거울처럼 똑같이 그림. 좌우가 맞아야 더 정돈돼 보임
-const orbBarLevels = new Array(ORB_BAR_COUNT / 2).fill(0);
-let ripples = [];
-let lastRippleSecond = 0;
-
-// 말하는 화면이고 방송 중일 때만 가운데 원이 나타남
-function updateVoiceOrbVisibility() {
-  const isTalkSlide = slides[currentSlideNumber].hasAttribute("data-talk");
-  voiceOrb.classList.toggle("is-shown", isTalkSlide && isOnAirNow());
-}
-
-// 청록(조용함)에서 금빛(큼)으로 섞은 색을 만듦. 물결 두 줄 색이랑 맞춤
-function mixOrbColor(goldAmount, opacity) {
-  const red = Math.round(95 + (244 - 95) * goldAmount);
-  const green = Math.round(212 + (185 - 212) * goldAmount);
-  const blue = Math.round(240 + (66 - 240) * goldAmount);
-  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
-}
-
-// 목소리를 낮은 소리부터 높은 소리까지 나눠서, 각 높이의 소리가 얼마나 큰지 0~1로 꺼냄
-function readPitchLoudness(barIndex) {
-  if (!isListening()) return 0;
-  // 사람 목소리는 대략 100Hz~4000Hz라서 그 구간만 막대에 나눠 씀
-  const lowestBin = 2;
-  const highestBin = 90;
-  const bin = lowestBin + Math.floor((barIndex / orbBarLevels.length) * (highestBin - lowestBin));
-  return microphone.frequencies[bin] / 255;
-}
-
-function drawVoiceOrb(seconds) {
-  if (!voiceOrb.classList.contains("is-shown")) {
-    ripples = [];
-    return;
-  }
-  if (isListening()) {
-    microphone.analyser.getByteFrequencyData(microphone.frequencies);
-  }
-  orbBrush.clearRect(0, 0, orbCanvas.width, orbCanvas.height);
-
-  // 조용할 때도 죽어 보이지 않게 천천히 숨 쉬듯 커졌다 작아짐
-  const breathing = Math.sin(seconds * 1.4) * 4;
-  const ringRadius = ORB_RING_RADIUS + breathing + voiceLevel * 18;
-
-  orbBrush.beginPath();
-  orbBrush.arc(ORB_CENTER, ORB_CENTER, ringRadius, 0, Math.PI * 2);
-  orbBrush.lineWidth = 3;
-  orbBrush.strokeStyle = mixOrbColor(voiceLevel * 0.5, 0.9);
-  orbBrush.stroke();
-
-  // 교실 잡음에 막대가 계속 튀지 않게, 전체 목소리 크기(voiceLevel)를 곱해서 말할 때만 길어지게 함
-  orbBarLevels.forEach((barLevel, index) => {
-    const target = readPitchLoudness(index) ** 2 * Math.min(1, voiceLevel * 1.5);
-    orbBarLevels[index] = followLevel(barLevel, target);
-  });
-
-  orbBrush.lineCap = "round";
-  orbBrush.lineWidth = 6;
-  for (let barNumber = 0; barNumber < ORB_BAR_COUNT; barNumber++) {
-    const mirroredIndex = barNumber < orbBarLevels.length ? barNumber : ORB_BAR_COUNT - 1 - barNumber;
-    const barLevel = orbBarLevels[mirroredIndex];
-    const angle = -Math.PI / 2 + (barNumber / ORB_BAR_COUNT) * Math.PI * 2;
-    const startRadius = ringRadius + 14;
-    const endRadius = startRadius + 6 + barLevel * ORB_BAR_LONGEST;
-
-    orbBrush.beginPath();
-    orbBrush.moveTo(ORB_CENTER + Math.cos(angle) * startRadius, ORB_CENTER + Math.sin(angle) * startRadius);
-    orbBrush.lineTo(ORB_CENTER + Math.cos(angle) * endRadius, ORB_CENTER + Math.sin(angle) * endRadius);
-    orbBrush.strokeStyle = mixOrbColor(barLevel, 0.4 + barLevel * 0.6);
-    orbBrush.stroke();
-  }
-
-  // 크게 말하는 순간마다 물에 돌 던진 것처럼 동그란 파동을 하나씩 내보냄
-  if (voiceLevel > LOUD_ENOUGH_FOR_RIPPLE && seconds - lastRippleSecond > RIPPLE_GAP_SECONDS) {
-    ripples.push({ bornSecond: seconds, isLoud: voiceLevel > LOUD_ENOUGH_FOR_GOLD });
-    lastRippleSecond = seconds;
-  }
-  ripples = ripples.filter((ripple) => seconds - ripple.bornSecond < RIPPLE_LIFETIME_SECONDS);
-
-  orbBrush.lineWidth = 2;
-  for (const ripple of ripples) {
-    const progress = (seconds - ripple.bornSecond) / RIPPLE_LIFETIME_SECONDS;
-    const radius = ringRadius + progress * (RIPPLE_FARTHEST_RADIUS - ringRadius);
-    orbBrush.beginPath();
-    orbBrush.arc(ORB_CENTER, ORB_CENTER, radius, 0, Math.PI * 2);
-    orbBrush.strokeStyle = mixOrbColor(ripple.isLoud ? 1 : 0, (1 - progress) * 0.6);
-    orbBrush.stroke();
-  }
-}
-
-// 물결, 가운데 원, HUD 막대를 한 번에 그림. 목소리 크기는 여기서 한 번만 재서 셋이 같이 씀
-function animateEveryFrame(time) {
-  const seconds = time / 1000;
-  voiceLevel = followLevel(voiceLevel, readVoiceLevel());
-  // 물결은 방송 중일 때만 목소리를 따라감. HUD 막대는 대기 화면에서도 움직여서 마이크 확인용으로 씀
-  waveLevel = followLevel(waveLevel, isOnAirNow() ? voiceLevel : 0);
-
-  drawSeaWaves(seconds);
-  drawVoiceOrb(seconds);
-  updateSignalBars();
-  requestAnimationFrame(animateEveryFrame);
-}
-
-// 마이크가 켜져 있으면 HUD 막대 5개가 음량계가 됨. 마이크가 없으면 원래처럼 깜빡이기만 함
-function updateSignalBars() {
-  signalBarsBox.classList.toggle("is-meter", isListening());
-  if (!isListening()) return;
-  const litCount = Math.max(1, Math.round(voiceLevel * signalBars.length));
-  signalBars.forEach((bar, index) => bar.classList.toggle("is-lit", index < litCount));
+  requestAnimationFrame(drawSeaWaves);
 }
 
 function hideCursorWhenIdle() {
@@ -614,7 +405,6 @@ function hideCursorWhenIdle() {
 }
 
 document.addEventListener("keydown", (event) => {
-  wakeMicrophone();
   const key = event.key;
   if (key === "ArrowRight" || key === " " || key === "PageDown" || key === "Enter") {
     event.preventDefault();
@@ -634,23 +424,17 @@ document.addEventListener("keydown", (event) => {
     togglePauseVideosInCurrentSlide();
   } else if (key === "t" || key === "T" || key === "ㅅ") {
     practiceTimer.classList.toggle("is-visible");
-  } else if (key === "m" || key === "M" || key === "ㅡ") {
-    isMicrophoneOn = !isMicrophoneOn;
   }
 });
 
-stage.addEventListener("click", () => {
-  wakeMicrophone();
-  goForward();
-});
+stage.addEventListener("click", goForward);
 window.addEventListener("resize", fitStageToWindow);
 
 fitStageToWindow();
 markMissingMedia();
 slides[0].classList.add("is-active");
 setOnAir(shouldBeOnAir(slides[0], false));
-startMicrophone();
-requestAnimationFrame(animateEveryFrame);
+requestAnimationFrame(drawSeaWaves);
 updateFutureClock();
 setInterval(updateFutureClock, 1000);
 setInterval(updatePracticeTimer, 500);
