@@ -219,6 +219,10 @@ async function playOnAirTransition(turnOn, applyChange) {
   if (isStartingShow && !isMusicWanted) {
     startBackgroundMusic();
   }
+  // 불이 꺼지면 BGM도 같이 서서히 꺼짐. 마지막에 B 누르는 걸 깜빡해도 노래가 계속 나오지 않게
+  if (!turnOn && isMusicWanted) {
+    stopBackgroundMusic();
+  }
   await wait(450);
 
   // 화면이 불빛으로 꽉 차 있는 동안 뒤에서 몰래 다음 화면으로 바꿔 둠
