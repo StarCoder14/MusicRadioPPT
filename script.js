@@ -23,10 +23,14 @@ const MATERIALIZE_MILLISECONDS = 450;
 
 const WAVE_FLOW_SPEED = 107;
 const POINT_GAP = 4;
+const MUSIC_VOLUME = 0.7;
+const MUSIC_FADE_IN_MILLISECONDS = 2000;
+const MUSIC_FADE_OUT_MILLISECONDS = 2500;
 
 let currentSlideNumber = 0;
 let showStartTime = null;
 let isTransitioning = false;
+let isMusicWanted = false;
 
 // 창 크기가 바뀔 때마다 1920x1080 무대를 화면에 꽉 맞게 늘이고 줄임
 function fitStageToWindow() {
@@ -209,7 +213,12 @@ async function playOnAirTransition(turnOn, applyChange) {
     { duration: 800, easing: smoothMove, fill: "forwards" }
   ).finished;
 
+  const isStartingShow = turnOn && currentSlideNumber === 0;
   await flickerLamp(turnOn);
+  // 대기 화면에서 방송을 시작하는 순간에만 BGM이 같이 켜짐. 클로징에서 뒤로 돌아갈 때 불이 다시 켜져도 노래는 안 켜짐
+  if (isStartingShow && !isMusicWanted) {
+    startBackgroundMusic();
+  }
   await wait(450);
 
   // 화면이 불빛으로 꽉 차 있는 동안 뒤에서 몰래 다음 화면으로 바꿔 둠
@@ -295,29 +304,54 @@ function toggleFullscreen() {
   }
 }
 
-// 노래가 뚝 끊기면 방송 같지 않아서 천천히 키우고 천천히 줄임
-function fadeMusicTo(targetVolume, onFinished) {
-  clearInterval(backgroundMusic.fadeTimer);
-  backgroundMusic.fadeTimer = setInterval(() => {
-    const difference = targetVolume - backgroundMusic.volume;
-    if (Math.abs(difference) < 0.05) {
-      backgroundMusic.volume = targetVolume;
-      clearInterval(backgroundMusic.fadeTimer);
-      if (onFinished) onFinished();
-      return;
+// 노래가 뚝 끊기면 방송 같지 않아서 시간을 정해 두고 천천히 키우고 천천히 줄임
+// 이전엔 0.05씩 일정하게 바꿨는데, 귀에는 끝부분에서 뚝 끊기는 것처럼 들려서 제곱근 단위로 바꾸는 방식으로 고침
+function fadeMusicTo(targetVolume, durationMilliseconds, onFinished) {
+  cancelAnimationFrame(backgroundMusic.fadeFrame);
+  const startLoudness = Math.sqrt(backgroundMusic.volume);
+  const targetLoudness = Math.sqrt(targetVolume);
+  const startTime = performance.now();
+
+  const fadeOneFrame = (now) => {
+    const progress = Math.min(1, (now - startTime) / durationMilliseconds);
+    const loudness = startLoudness + (targetLoudness - startLoudness) * progress;
+    backgroundMusic.volume = loudness * loudness;
+    if (progress < 1) {
+      backgroundMusic.fadeFrame = requestAnimationFrame(fadeOneFrame);
+    } else if (onFinished) {
+      onFinished();
     }
-    backgroundMusic.volume += Math.sign(difference) * 0.05;
-  }, 60);
+  };
+  backgroundMusic.fadeFrame = requestAnimationFrame(fadeOneFrame);
+}
+
+function startBackgroundMusic() {
+  isMusicWanted = true;
+  // 줄어들던 중에 다시 켜면 처음부터 다시 틀지 않고 그 자리에서 다시 커짐
+  if (!backgroundMusic.paused) {
+    fadeMusicTo(MUSIC_VOLUME, MUSIC_FADE_IN_MILLISECONDS);
+    return;
+  }
+  backgroundMusic.currentTime = 0;
+  backgroundMusic.volume = 0;
+  backgroundMusic.play()
+    .then(() => fadeMusicTo(MUSIC_VOLUME, MUSIC_FADE_IN_MILLISECONDS))
+    .catch(() => console.warn("videos 폴더에 bgm 파일이 없어서 BGM을 못 틀었음"));
+}
+
+function stopBackgroundMusic() {
+  isMusicWanted = false;
+  fadeMusicTo(0, MUSIC_FADE_OUT_MILLISECONDS, () => {
+    // 줄어드는 동안 B를 다시 눌러서 켜졌으면 멈추지 않음
+    if (!isMusicWanted) backgroundMusic.pause();
+  });
 }
 
 function toggleBackgroundMusic() {
-  if (backgroundMusic.paused) {
-    backgroundMusic.volume = 0;
-    backgroundMusic.play().then(() => fadeMusicTo(0.7)).catch(() => {
-      console.warn("videos/bgm.mp3 파일이 없어서 BGM을 못 틀었음");
-    });
+  if (isMusicWanted) {
+    stopBackgroundMusic();
   } else {
-    fadeMusicTo(0, () => backgroundMusic.pause());
+    startBackgroundMusic();
   }
 }
 
