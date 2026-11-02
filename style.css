@@ -624,7 +624,7 @@ body {
   display: flex;
 }
 
-/* 사연, 영등굿, 공익광고, NG 영상 칸 */
+/* 사연, 영등굿, 공익광고 영상 칸 */
 .full-video {
   width: 1540px;
   height: 790px;
