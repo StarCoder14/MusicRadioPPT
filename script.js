@@ -72,11 +72,11 @@ function shouldBeOnAir(slide, isOffAirStepShown) {
   return slide.dataset.onAir !== "off" && !isOffAirStepShown;
 }
 
-function playVideosIn(slide) {
+// 화면에 들어오면 바로 틀지 않고 첫 장면에 세워 둠. 말로 소개하다가 원하는 순간에 스페이스로 틀려고
+function rewindVideosIn(slide) {
   slide.querySelectorAll("video").forEach((video) => {
-    if (video.closest(".media-frame").classList.contains("is-missing")) return;
+    video.pause();
     video.currentTime = 0;
-    video.play().catch(() => {});
   });
 }
 
@@ -84,8 +84,10 @@ function pauseVideosIn(slide) {
   slide.querySelectorAll("video").forEach((video) => video.pause());
 }
 
-// 영상이 길어서 중간에 멈출 일이 생길 수 있음. 처음부터 다시 틀지 않고 멈춘 곳에서 이어서 재생함
+// 처음부터 다시 틀지 않고 멈춘 곳에서 이어서 재생함. 끝까지 본 영상은 play()가 알아서 처음부터 틀어 줌
 function togglePauseVideosInCurrentSlide() {
+  // 넘어가는 연출 중에 틀면 화면이 안 보이는 동안 앞부분이 날아감
+  if (isTransitioning) return;
   slides[currentSlideNumber].querySelectorAll("video").forEach((video) => {
     if (video.closest(".media-frame").classList.contains("is-missing")) return;
     if (video.paused) {
@@ -106,6 +108,7 @@ function goToSlide(nextSlideNumber, showAllSteps) {
 
   // 뒤로 돌아갈 때는 그 화면을 다 펼친 상태로 보여 줌. 앞으로 갈 때는 처음부터 하나씩
   stepsOf(arrivingSlide).forEach((step) => setStepVisible(step, showAllSteps));
+  rewindVideosIn(arrivingSlide);
 
   arrivingSlide.classList.add("is-active");
 }
@@ -246,11 +249,6 @@ async function runChange(nextIsOnAir, applyChange, isNewSlide) {
     await playGlitchTransition(applyChange);
   } else {
     applyChange();
-  }
-
-  // 화면이 다 나타난 뒤에 영상을 틀어야 안 보이는 동안 앞부분이 날아가지 않음
-  if (isNewSlide) {
-    playVideosIn(slides[currentSlideNumber]);
   }
 }
 
@@ -444,9 +442,13 @@ function hideCursorWhenIdle() {
 
 document.addEventListener("keydown", (event) => {
   const key = event.key;
-  if (key === "ArrowRight" || key === " " || key === "PageDown" || key === "Enter") {
+  if (key === "ArrowRight" || key === "PageDown" || key === "Enter") {
     event.preventDefault();
     goForward();
+  } else if (key === " ") {
+    // 스페이스는 영상 재생, 멈춤 전용. 영상 없는 화면에서 실수로 눌러도 안 넘어감
+    event.preventDefault();
+    togglePauseVideosInCurrentSlide();
   } else if (key === "ArrowLeft" || key === "PageUp" || key === "Backspace") {
     event.preventDefault();
     goBackward();
