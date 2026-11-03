@@ -72,28 +72,31 @@ function shouldBeOnAir(slide, isOffAirStepShown) {
   return slide.dataset.onAir !== "off" && !isOffAirStepShown;
 }
 
+// 영상이랑 음악 소개 노래를 똑같이 다루려고 둘 다 한 번에 찾음
+const PLAYABLE_MEDIA = "video, audio";
+
 // 화면에 들어오면 바로 틀지 않고 첫 장면에 세워 둠. 말로 소개하다가 원하는 순간에 스페이스로 틀려고
-function rewindVideosIn(slide) {
-  slide.querySelectorAll("video").forEach((video) => {
-    video.pause();
-    video.currentTime = 0;
+function rewindMediaIn(slide) {
+  slide.querySelectorAll(PLAYABLE_MEDIA).forEach((media) => {
+    media.pause();
+    media.currentTime = 0;
   });
 }
 
-function pauseVideosIn(slide) {
-  slide.querySelectorAll("video").forEach((video) => video.pause());
+function pauseMediaIn(slide) {
+  slide.querySelectorAll(PLAYABLE_MEDIA).forEach((media) => media.pause());
 }
 
 // 처음부터 다시 틀지 않고 멈춘 곳에서 이어서 재생함. 끝까지 본 영상은 play()가 알아서 처음부터 틀어 줌
-function togglePauseVideosInCurrentSlide() {
+function togglePauseMediaInCurrentSlide() {
   // 넘어가는 연출 중에 틀면 화면이 안 보이는 동안 앞부분이 날아감
   if (isTransitioning) return;
-  slides[currentSlideNumber].querySelectorAll("video").forEach((video) => {
-    if (video.closest(".media-frame").classList.contains("is-missing")) return;
-    if (video.paused) {
-      video.play().catch(() => {});
+  slides[currentSlideNumber].querySelectorAll(PLAYABLE_MEDIA).forEach((media) => {
+    if (media.paused) {
+      // 파일이 없으면 play()가 실패만 하고 끝나서 따로 막지 않음
+      media.play().catch(() => {});
     } else {
-      video.pause();
+      media.pause();
     }
   });
 }
@@ -101,14 +104,14 @@ function togglePauseVideosInCurrentSlide() {
 function goToSlide(nextSlideNumber, showAllSteps) {
   const leavingSlide = slides[currentSlideNumber];
   leavingSlide.classList.remove("is-active");
-  pauseVideosIn(leavingSlide);
+  pauseMediaIn(leavingSlide);
 
   currentSlideNumber = nextSlideNumber;
   const arrivingSlide = slides[currentSlideNumber];
 
   // 뒤로 돌아갈 때는 그 화면을 다 펼친 상태로 보여 줌. 앞으로 갈 때는 처음부터 하나씩
   stepsOf(arrivingSlide).forEach((step) => setStepVisible(step, showAllSteps));
-  rewindVideosIn(arrivingSlide);
+  rewindMediaIn(arrivingSlide);
 
   arrivingSlide.classList.add("is-active");
 }
@@ -448,7 +451,7 @@ document.addEventListener("keydown", (event) => {
   } else if (key === " ") {
     // 스페이스는 영상 재생, 멈춤 전용. 영상 없는 화면에서 실수로 눌러도 안 넘어감
     event.preventDefault();
-    togglePauseVideosInCurrentSlide();
+    togglePauseMediaInCurrentSlide();
   } else if (key === "ArrowLeft" || key === "PageUp" || key === "Backspace") {
     event.preventDefault();
     goBackward();
@@ -461,7 +464,7 @@ document.addEventListener("keydown", (event) => {
   } else if (key === "b" || key === "B" || key === "ㅠ") {
     toggleBackgroundMusic();
   } else if (key === "p" || key === "P" || key === "ㅔ") {
-    togglePauseVideosInCurrentSlide();
+    togglePauseMediaInCurrentSlide();
   } else if (key === "t" || key === "T" || key === "ㅅ") {
     practiceTimer.classList.toggle("is-visible");
   }
