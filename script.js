@@ -2,7 +2,9 @@ const stage = document.getElementById("stage");
 const camera = document.getElementById("camera");
 const onAirLamp = document.getElementById("on-air-lamp");
 const onAirFlash = document.getElementById("on-air-flash");
-const onAirSound = document.getElementById("on-air-sound");
+const onAirOnSound = document.getElementById("on-air-on-sound");
+const onAirOffSound = document.getElementById("on-air-off-sound");
+const glitchSound = document.getElementById("glitch-sound");
 const slides = Array.from(document.querySelectorAll(".slide"));
 const futureClock = document.getElementById("future-clock");
 const practiceTimer = document.getElementById("practice-timer");
@@ -128,6 +130,7 @@ function restartAnimation(element, className) {
 async function playGlitchTransition(applyChange) {
   isTransitioning = true;
 
+  playSound(glitchSound);
   restartAnimation(camera, "is-glitching");
   await wait(GLITCH_MILLISECONDS);
   camera.classList.remove("is-glitching");
@@ -174,14 +177,16 @@ function zoomedOnLampTransform() {
   };
 }
 
-function playOnAirSound() {
-  onAirSound.currentTime = 0;
-  onAirSound.play().catch(() => {});
+// 효과음 파일이 없으면 소리 없이 그냥 넘어감
+function playSound(sound) {
+  sound.currentTime = 0;
+  sound.play().catch(() => {});
 }
 
 // 불을 켤 때는 형광등처럼 지지직 두어 번 깜빡이다 켜지고, 끌 때는 한 번 버티다 툭 꺼짐
+// 효과음은 이 깜빡이는 타이밍에 맞춰 만들어 둠. 여기 숫자를 바꾸면 make_sounds.py 의 LAMP_ON_MOMENTS, LAMP_OFF_MOMENTS 도 같이 바꿔야 함
 async function flickerLamp(turnOn) {
-  playOnAirSound();
+  playSound(turnOn ? onAirOnSound : onAirOffSound);
   if (turnOn) {
     setOnAir(true);
     await wait(70);
@@ -204,7 +209,7 @@ async function flickerLamp(turnOn) {
 }
 
 // 이전엔 불만 바로 바꿨는데, 방송 시작과 끝은 제일 중요한 순간이라 카메라가 불빛까지 다가갔다가 빠지게 바꿈
-async function playOnAirTransition(turnOn, applyChange) {
+async function playOnAirTransition(turnOn, applyChange, arrivingSlide) {
   isTransitioning = true;
   const zoom = zoomedOnLampTransform();
   const zoomedTransform = zoom.transform;
@@ -219,16 +224,9 @@ async function playOnAirTransition(turnOn, applyChange) {
     { duration: 800, easing: smoothMove, fill: "forwards" }
   ).finished;
 
-  const isStartingShow = turnOn && currentSlideNumber === 0;
   await flickerLamp(turnOn);
-  // 대기 화면에서 방송을 시작하는 순간에만 BGM이 같이 켜짐. 클로징에서 뒤로 돌아갈 때 불이 다시 켜져도 노래는 안 켜짐
-  if (isStartingShow && !isMusicWanted) {
-    startBackgroundMusic();
-  }
-  // 불이 꺼지면 BGM도 같이 서서히 꺼짐. 마지막에 B 누르는 걸 깜빡해도 노래가 계속 나오지 않게
-  if (!turnOn && isMusicWanted) {
-    stopBackgroundMusic();
-  }
+  // 불이 켜지는 순간이랑 노래 시작을 맞추려고 깜빡임이 끝난 바로 그때 BGM을 맞춤. 불이 꺼질 때도 같이 작아짐
+  matchBackgroundMusicTo(arrivingSlide, turnOn);
   await wait(450);
 
   // 화면이 불빛으로 꽉 차 있는 동안 뒤에서 몰래 다음 화면으로 바꿔 둠
@@ -245,10 +243,15 @@ async function playOnAirTransition(turnOn, applyChange) {
 }
 
 // 불 상태가 바뀌면 줌 연출, 그대로면 글리치 연출
-async function runChange(nextIsOnAir, applyChange, isNewSlide) {
+async function runChange(nextIsOnAir, applyChange, arrivingSlide, isNewSlide) {
   if (nextIsOnAir !== isOnAirNow()) {
-    await playOnAirTransition(nextIsOnAir, applyChange);
-  } else if (isNewSlide) {
+    await playOnAirTransition(nextIsOnAir, applyChange, arrivingSlide);
+    return;
+  }
+
+  // 키 누르자마자 BGM을 맞춤. 나갈 때는 지지직하는 동안 자연스럽게 작아지기 시작함
+  matchBackgroundMusicTo(arrivingSlide, nextIsOnAir);
+  if (isNewSlide) {
     await playGlitchTransition(applyChange);
   } else {
     applyChange();
@@ -258,7 +261,7 @@ async function runChange(nextIsOnAir, applyChange, isNewSlide) {
 function changeStep(slide, step, isVisible) {
   const offAirStep = slide.querySelector(OFF_AIR_STEP);
   const isOffAirStepShown = step === offAirStep ? isVisible : isStepShown(offAirStep);
-  runChange(shouldBeOnAir(slide, isOffAirStepShown), () => setStepVisible(step, isVisible), false);
+  runChange(shouldBeOnAir(slide, isOffAirStepShown), () => setStepVisible(step, isVisible), slide, false);
 }
 
 function changeSlide(nextSlideNumber, showAllSteps) {
@@ -269,6 +272,7 @@ function changeSlide(nextSlideNumber, showAllSteps) {
   runChange(
     shouldBeOnAir(nextSlide, showAllSteps && hasOffAirStep),
     () => goToSlide(nextSlideNumber, showAllSteps),
+    nextSlide,
     true
   );
 }
@@ -357,6 +361,17 @@ function toggleBackgroundMusic() {
     stopBackgroundMusic();
   } else {
     startBackgroundMusic();
+  }
+}
+
+// 이전엔 방송 시작 때만 자동으로 켜고 나머지는 B로 껐는데, 화면마다 정해 두는 방식으로 바꿈
+// 오프닝, 클로징처럼 data-bgm 붙은 화면이면서 불이 켜져 있을 때만 나옴. B로 따로 켰어도 다른 화면으로 가면 꺼짐
+function matchBackgroundMusicTo(slide, isOnAir) {
+  const shouldPlay = slide.dataset.bgm === "on" && isOnAir;
+  if (shouldPlay && !isMusicWanted) {
+    startBackgroundMusic();
+  } else if (!shouldPlay && isMusicWanted) {
+    stopBackgroundMusic();
   }
 }
 

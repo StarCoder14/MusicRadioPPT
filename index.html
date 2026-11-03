@@ -80,7 +80,8 @@
 
         <!-- ===== 1. DJ 오프닝 ===== -->
         <!-- 사람이 직접 앞에서 말하는 화면은 일부러 비워 둠. 그래야 라디오처럼 사람한테 눈이 감 -->
-        <section class="slide"></section>
+        <!-- data-bgm 붙은 화면에서만 BGM이 나옴. 들어오면 커지고 나가면 작아짐 -->
+        <section class="slide" data-bgm="on"></section>
 
         <!-- ===== 2. 사연 소개 (영상) ===== -->
         <section class="slide">
@@ -136,7 +137,7 @@
 
         <!-- ===== 7. DJ 클로징 (직접 말함) ===== -->
         <!-- 안 보이는 단계 하나를 둠. 마지막 멘트 끝나고 한 번 더 누르면 이게 켜지면서 ON AIR 불이 꺼짐 -->
-        <section class="slide">
+        <section class="slide" data-bgm="on">
           <div class="step" data-on-air="off"></div>
         </section>
 
@@ -152,7 +153,10 @@
       <source src="videos/bgm.m4a" type="audio/mp4">
       <source src="videos/bgm.mp4" type="video/mp4">
     </audio>
-    <audio id="on-air-sound" src="videos/onair.mp3" preload="auto"></audio>
+    <!-- 효과음은 make_sounds.py 로 만든 것. 소리를 바꾸려면 그 파일 숫자를 고치고 다시 돌리면 됨 -->
+    <audio id="on-air-on-sound" src="videos/sfx-onair-on.wav" preload="auto"></audio>
+    <audio id="on-air-off-sound" src="videos/sfx-onair-off.wav" preload="auto"></audio>
+    <audio id="glitch-sound" src="videos/sfx-glitch.wav" preload="auto"></audio>
   </div>
 
   <script src="script.js"></script>
