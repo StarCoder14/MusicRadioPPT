@@ -596,7 +596,8 @@ body {
 }
 
 /* 파일이 아직 없을 때 보이는 빈칸. 어떤 파일을 넣으면 되는지 바로 알려 줌 */
-.media-frame.is-missing video {
+.media-frame.is-missing video,
+.media-frame.is-missing img {
   display: none;
 }
 
@@ -634,6 +635,20 @@ body {
 /* 영상 가장자리가 잘리면 자막이나 얼굴이 날아가서, 화면을 꽉 채우는 대신 영상 전체가 다 보이게 함 */
 .full-video video {
   object-fit: contain;
+}
+
+/* 사연 속 물건 사진. 사진 비율(1360x760)을 그대로 두고 크기만 줄임 */
+.object-photo {
+  width: 1224px;
+  height: 684px;
+  box-shadow: 0 0 60px rgba(95, 212, 240, 0.18);
+}
+
+.object-photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 /* ---------- 음악 소개 ---------- */
