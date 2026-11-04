@@ -689,6 +689,8 @@ body {
 .song-title {
   font-family: var(--font-title);
   font-size: 110px;
+  /* h2는 기본이 굵은 글씨인데 이 글꼴엔 굵은 모양이 없음. 크롬이 억지로 부풀리다 람, 불, 는 속을 칠해 버려서 끔 */
+  font-weight: normal;
 }
 
 .song-info {
