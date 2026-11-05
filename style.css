@@ -689,8 +689,10 @@ body {
 .song-title {
   font-family: var(--font-title);
   font-size: 110px;
-  /* h2는 기본이 굵은 글씨인데 이 글꼴엔 굵은 모양이 없음. 크롬이 억지로 부풀리다 람, 불, 는 속을 칠해 버려서 끔 */
+  /* h2는 기본이 굵은 글씨인데, 크롬이 억지로 굵게 만들면 람, 불 안쪽 좁은 틈이 막혀서 속이 채워진 것처럼 보임. 그래서 끔 */
   font-weight: normal;
+  /* 대신 틈이 안 막히는 만큼만 필터로 살짝 두껍게 함. 필터는 index.html 맨 위 defs 안에 있음 */
+  filter: url(#thicken-title);
 }
 
 .song-info {
